@@ -47,8 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [navigate])
 
   const entrar = useCallback(async (email: string, senha: string) => {
+    // Sem o cookie (ex.: a busca inicial falhou por rede instável), o POST de login levaria 403.
+    if (!document.cookie.split('; ').some((c) => c.startsWith('XSRF-TOKEN='))) {
+      await authApi.obterCsrf()
+    }
     const logado = await authApi.entrar(email, senha)
-    // O Spring renova o token CSRF na autenticação; busca o novo antes do próximo POST.
+    // Garante um token válido para a sessão nova antes do próximo POST.
     await authApi.obterCsrf()
     setSessaoExpirou(false)
     setUsuario(logado)

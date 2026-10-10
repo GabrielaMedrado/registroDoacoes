@@ -201,6 +201,23 @@ class AuthApiTest {
 	}
 
 	@Test
+	void minhaSenhaComMaisDe72BytesRetorna400() throws Exception {
+		MockHttpSession sessao = login("maria@igreja.org", SENHA);
+
+		// 40 caracteres acentuados = 80 bytes em UTF-8, acima do limite do BCrypt
+		trocarSenha(sessao, SENHA, "á".repeat(40))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.erros[0].campo").value("novaSenha"));
+	}
+
+	@Test
+	void loginComSenhaMaiorQue72BytesRetorna401Generico() throws Exception {
+		tentarLogin("maria@igreja.org", "a".repeat(100))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.detail").value(MSG_INVALIDO));
+	}
+
+	@Test
 	void minhaSenhaTrocaEPermiteNovoLogin() throws Exception {
 		MockHttpSession sessao = login("maria@igreja.org", SENHA);
 

@@ -23,6 +23,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Endpoints em que 401 é resposta esperada (não significa sessão expirada). */
+const ROTAS_SEM_SESSAO = ['/api/auth/login', '/api/auth/me', '/api/auth/logout']
+
 let aoNaoAutenticado: () => void = () => {}
 
 /** Registra o que fazer quando a sessão expira (401 em rotas que não são de autenticação). */
@@ -65,7 +68,7 @@ export async function api<T>(caminho: string, opcoes?: { method?: Metodo; body?:
   })
 
   if (!resposta.ok) {
-    if (resposta.status === 401 && !caminho.startsWith('/api/auth/')) {
+    if (resposta.status === 401 && !ROTAS_SEM_SESSAO.includes(caminho)) {
       aoNaoAutenticado()
     }
     throw new ApiError(resposta.status, await lerProblema(resposta))

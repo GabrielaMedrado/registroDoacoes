@@ -61,6 +61,22 @@ test('entrar renova o token CSRF depois do login', async () => {
   expect(ordensCsrf.some((ordem) => ordem > ordemEntrar)).toBe(true)
 })
 
+test('se o token CSRF inicial falhou, entrar busca o token antes do login', async () => {
+  prepararAuth(null)
+  authMock.obterCsrf.mockRejectedValueOnce(new Error('rede instável'))
+  authMock.entrar.mockResolvedValue(VOLUNTARIO)
+  renderComProviders(<App />, { rota: '/login' })
+
+  await userEvent.type(await screen.findByLabelText(/E-mail/), 'vitor@igreja.org')
+  await userEvent.type(screen.getByLabelText(/Senha/), 'segredo123')
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+  await screen.findByRole('heading', { name: 'Painel' })
+  const ordemEntrar = authMock.entrar.mock.invocationCallOrder[0]
+  const csrfAntesDoLogin = authMock.obterCsrf.mock.invocationCallOrder.filter((ordem) => ordem < ordemEntrar)
+  expect(csrfAntesDoLogin).toHaveLength(2)
+})
+
 test('401 durante o uso leva ao login com aviso de sessão expirada', async () => {
   prepararAuth(VOLUNTARIO)
   renderComProviders(<App />, { rota: '/campanhas' })
