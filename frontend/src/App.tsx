@@ -1,5 +1,32 @@
-import { Title } from '@mantine/core'
+import { Navigate, Route, Routes } from 'react-router'
+import { AuthProvider } from './auth/AuthContext'
+import { RotaAdmin } from './auth/RotaAdmin'
+import { RotaProtegida } from './auth/RotaProtegida'
+import { AppShellLayout } from './layout/AppShellLayout'
+import { EmConstrucaoPage } from './pages/EmConstrucaoPage'
+import { LoginPage } from './pages/LoginPage'
+import { MinhaContaPage } from './pages/MinhaContaPage'
 
 export default function App() {
-  return <Title order={1}>Gestão de Doações</Title>
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<RotaProtegida />}>
+          <Route element={<AppShellLayout />}>
+            <Route index element={<EmConstrucaoPage titulo="Painel" />} />
+            <Route path="campanhas" element={<EmConstrucaoPage titulo="Campanhas" />} />
+            <Route path="doacoes" element={<EmConstrucaoPage titulo="Doações" />} />
+            <Route path="doadores" element={<EmConstrucaoPage titulo="Doadores" />} />
+            <Route path="relatorios" element={<EmConstrucaoPage titulo="Relatórios" />} />
+            <Route path="minha-conta" element={<MinhaContaPage />} />
+            <Route element={<RotaAdmin />}>
+              <Route path="usuarios" element={<EmConstrucaoPage titulo="Usuários" />} />
+            </Route>
+          </Route>
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
+  )
 }
