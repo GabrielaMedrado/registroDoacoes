@@ -77,12 +77,30 @@ test('401 fora de /api/auth chama o callback de não autenticado', async () => {
   expect(callback).toHaveBeenCalledTimes(1)
 })
 
-test('401 em /api/auth/* não chama o callback', async () => {
+test('401 em /api/auth/login não chama o callback', async () => {
   const callback = vi.fn()
   definirAoNaoAutenticado(callback)
   fetchMock.mockResolvedValue(resposta(401, { status: 401, detail: 'E-mail ou senha inválidos.' }))
 
   await expect(api('/api/auth/login', { method: 'POST', body: {} })).rejects.toBeInstanceOf(ApiError)
+  expect(callback).not.toHaveBeenCalled()
+})
+
+test('401 em /api/auth/minha-senha (sessão expirada) chama o callback', async () => {
+  const callback = vi.fn()
+  definirAoNaoAutenticado(callback)
+  fetchMock.mockResolvedValue(new Response(null, { status: 401 }))
+
+  await expect(api('/api/auth/minha-senha', { method: 'PUT', body: {} })).rejects.toBeInstanceOf(ApiError)
+  expect(callback).toHaveBeenCalledTimes(1)
+})
+
+test('401 em /api/auth/me não chama o callback', async () => {
+  const callback = vi.fn()
+  definirAoNaoAutenticado(callback)
+  fetchMock.mockResolvedValue(new Response(null, { status: 401 }))
+
+  await expect(api('/api/auth/me')).rejects.toBeInstanceOf(ApiError)
   expect(callback).not.toHaveBeenCalled()
 })
 

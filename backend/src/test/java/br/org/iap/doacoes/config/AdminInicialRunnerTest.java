@@ -60,6 +60,16 @@ class AdminInicialRunnerTest {
 	}
 
 	@Test
+	void falhaComMensagemClaraSeEmailInvalido() {
+		when(repositorio.count()).thenReturn(0L);
+
+		assertThatThrownBy(() -> runner("admin", "segredo123").run(null))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessage("ADMIN_EMAIL inválido: informe um e-mail completo, como admin@igreja.org");
+		verify(repositorio, never()).save(any());
+	}
+
+	@Test
 	void falhaComMensagemClaraSeSenhaCurta() {
 		when(repositorio.count()).thenReturn(0L);
 
