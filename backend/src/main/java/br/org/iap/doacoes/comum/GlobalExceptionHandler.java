@@ -47,6 +47,11 @@ public class GlobalExceptionHandler {
 		return problema(HttpStatus.CONFLICT, ex.getMessage());
 	}
 
+	@ExceptionHandler(AcessoNegadoException.class)
+	public ResponseEntity<ProblemDetail> acessoNegado(AcessoNegadoException ex) {
+		return problema(HttpStatus.FORBIDDEN, ex.getMessage());
+	}
+
 	@ExceptionHandler(NaoEncontradoException.class)
 	public ResponseEntity<ProblemDetail> naoEncontrado(NaoEncontradoException ex) {
 		return problema(HttpStatus.NOT_FOUND, ex.getMessage());

@@ -1,7 +1,9 @@
 package br.org.iap.doacoes.doacao;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -123,6 +125,98 @@ class DoacaoApiTest extends ApiTestSupport {
 		registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "0"))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.erros[0].campo").value("itens[0].quantidade"));
+	}
+
+	private String diasAtras(int dias) {
+		return LocalDate.now().minusDays(dias).toString();
+	}
+
+	@Test
+	void listaFiltraPorCampanhaPeriodoETipo() throws Exception {
+		long outra = criarCampanhaAtiva("Inverno");
+		long agasalho = criarNecessidade(outra, "Agasalho");
+		long itensAntiga = id(registrar(voluntario, doacaoDeItens(campanhaId, diasAtras(10), arrozId, "1")));
+		long dinheiro = id(registrar(voluntario, doacaoEmDinheiro(campanhaId, diasAtras(5), null, "30")));
+		long deOutra = id(registrar(voluntario, doacaoDeItens(outra, hoje, agasalho, "2")));
+
+		consultar("/api/doacoes?campanhaId=" + campanhaId, voluntario).andExpect(jsonPath("$.total").value(2));
+		consultar("/api/doacoes?tipo=DINHEIRO", voluntario)
+				.andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.itens[0].id").value(dinheiro));
+		consultar("/api/doacoes?de=" + diasAtras(6) + "&ate=" + diasAtras(5), voluntario)
+				.andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.itens[0].id").value(dinheiro));
+		consultar("/api/doacoes?campanhaId=" + campanhaId + "&tipo=ITEM&ate=" + diasAtras(10), voluntario)
+				.andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.itens[0].id").value(itensAntiga));
+		consultar("/api/doacoes?de=" + hoje, voluntario)
+				.andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.itens[0].id").value(deOutra));
+	}
+
+	@Test
+	void listaVemDaMaisRecenteParaAMaisAntiga() throws Exception {
+		long antiga = id(registrar(voluntario, doacaoDeItens(campanhaId, diasAtras(3), arrozId, "1")));
+		long recente = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
+
+		consultar("/api/doacoes", voluntario)
+				.andExpect(jsonPath("$.itens[0].id").value(recente))
+				.andExpect(jsonPath("$.itens[1].id").value(antiga));
+	}
+
+	@Test
+	void voluntarioRecebe403AoEditarDoacaoDeOutro() throws Exception {
+		long daAna = id(registrar(admin, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
+
+		enviar(put("/api/doacoes/" + daAna), voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "9"))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.detail").value("Você só pode alterar doações que você registrou."));
+		enviar(delete("/api/doacoes/" + daAna), voluntario, null).andExpect(status().isForbidden());
+		consultar("/api/doacoes/" + daAna, voluntario).andExpect(jsonPath("$.podeAlterar").value(false));
+	}
+
+	@Test
+	void autorEditaEExcluiAPropriaDoacao() throws Exception {
+		long minha = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
+
+		enviar(put("/api/doacoes/" + minha), voluntario, doacaoDeItens(campanhaId, hoje, feijaoId, "4"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.itens[0].item").value("Feijão"))
+				.andExpect(jsonPath("$.registradoPorNome").value("Vitor"));
+		enviar(delete("/api/doacoes/" + minha), voluntario, null).andExpect(status().isNoContent());
+		consultar("/api/doacoes/" + minha, voluntario)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.detail").value("Doação não encontrada."));
+	}
+
+	@Test
+	void excluirDoacaoLiberaExclusaoDaNecessidade() throws Exception {
+		long doacao = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
+		enviar(delete("/api/necessidades/" + arrozId), admin, null).andExpect(status().isConflict());
+
+		enviar(delete("/api/doacoes/" + doacao), voluntario, null).andExpect(status().isNoContent());
+
+		enviar(delete("/api/necessidades/" + arrozId), admin, null).andExpect(status().isNoContent());
+	}
+
+	@Test
+	void historicoDoDoadorListaSuasDoacoes() throws Exception {
+		long maria = id(enviar(post("/api/doadores"), voluntario, "{\"nome\":\"Maria\"}"));
+		registrar(voluntario, doacaoEmDinheiro(campanhaId, hoje, maria, "10"));
+		registrar(voluntario, doacaoEmDinheiro(campanhaId, hoje, maria, "20"));
+		registrar(voluntario, doacaoEmDinheiro(campanhaId, hoje, null, "30"));
+
+		consultar("/api/doadores/" + maria + "/doacoes", voluntario).andExpect(jsonPath("$.total").value(2));
+		consultar("/api/doadores/999999/doacoes", voluntario).andExpect(status().isNotFound());
+	}
+
+	@Test
+	void historicoContinuaAposAnonimizar() throws Exception {
+		long maria = id(enviar(post("/api/doadores"), voluntario, "{\"nome\":\"Maria\"}"));
+		registrar(voluntario, doacaoEmDinheiro(campanhaId, hoje, maria, "10"));
+		registrar(voluntario, doacaoEmDinheiro(campanhaId, hoje, maria, "20"));
+
+		enviar(post("/api/doadores/" + maria + "/anonimizar"), admin, null).andExpect(status().isOk());
+
+		consultar("/api/doadores/" + maria + "/doacoes", voluntario)
+				.andExpect(jsonPath("$.total").value(2))
+				.andExpect(jsonPath("$.itens[0].doadorNome").value("Anônimo"));
 	}
 
 	@Test
