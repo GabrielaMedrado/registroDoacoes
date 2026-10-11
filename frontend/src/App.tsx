@@ -5,6 +5,7 @@ import { RotaProtegida } from './auth/RotaProtegida'
 import { AppShellLayout } from './layout/AppShellLayout'
 import { EmConstrucaoPage } from './pages/EmConstrucaoPage'
 import { LoginPage } from './pages/LoginPage'
+import { CampanhaDetalhePage } from './pages/CampanhaDetalhePage'
 import { CampanhasPage } from './pages/CampanhasPage'
 import { MinhaContaPage } from './pages/MinhaContaPage'
 import { UsuariosPage } from './pages/UsuariosPage'
@@ -18,6 +19,7 @@ export default function App() {
           <Route element={<AppShellLayout />}>
             <Route index element={<EmConstrucaoPage titulo="Painel" />} />
             <Route path="campanhas" element={<CampanhasPage />} />
+            <Route path="campanhas/:id" element={<CampanhaDetalhePage />} />
             <Route path="doacoes" element={<EmConstrucaoPage titulo="Doações" />} />
             <Route path="doadores" element={<EmConstrucaoPage titulo="Doadores" />} />
             <Route path="relatorios" element={<EmConstrucaoPage titulo="Relatórios" />} />
