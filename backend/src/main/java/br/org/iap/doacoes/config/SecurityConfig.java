@@ -1,5 +1,7 @@
 package br.org.iap.doacoes.config;
 
+import br.org.iap.doacoes.auth.SessaoAtualizadaFilter;
+import br.org.iap.doacoes.usuario.UsuarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
@@ -41,7 +44,10 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
-			SecurityContextRepository securityContextRepository) throws Exception {
+			SecurityContextRepository securityContextRepository, UsuarioRepository usuarios) throws Exception {
+		// Instanciado aqui (não como @Bean) para não ser registrado também como filtro do servlet.
+		http.addFilterAfter(new SessaoAtualizadaFilter(usuarios, securityContextRepository),
+				SecurityContextHolderFilter.class);
 		http
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/auth/csrf", "/api/auth/login", "/actuator/health").permitAll()
