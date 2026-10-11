@@ -6,6 +6,7 @@ import { AppShellLayout } from './layout/AppShellLayout'
 import { EmConstrucaoPage } from './pages/EmConstrucaoPage'
 import { LoginPage } from './pages/LoginPage'
 import { MinhaContaPage } from './pages/MinhaContaPage'
+import { UsuariosPage } from './pages/UsuariosPage'
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
             <Route path="relatorios" element={<EmConstrucaoPage titulo="Relatórios" />} />
             <Route path="minha-conta" element={<MinhaContaPage />} />
             <Route element={<RotaAdmin />}>
-              <Route path="usuarios" element={<EmConstrucaoPage titulo="Usuários" />} />
+              <Route path="usuarios" element={<UsuariosPage />} />
             </Route>
           </Route>
         </Route>
