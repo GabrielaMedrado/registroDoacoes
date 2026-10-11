@@ -31,11 +31,17 @@ import { COR_STATUS, formatarData, formatarMoeda, formatarQuantidade, ROTULO_STA
 import { CampanhaFormModal } from './CampanhaFormModal'
 import { NecessidadeFormModal } from './NecessidadeFormModal'
 
-const ACOES_STATUS: { status: StatusCampanha; rotulo: string }[] = [
+const ACOES_STATUS: { status: StatusCampanha; rotulo: string; confirmacao?: string }[] = [
   { status: 'ATIVA', rotulo: 'Ativar' },
-  { status: 'ENCERRADA', rotulo: 'Encerrar' },
-  { status: 'RASCUNHO', rotulo: 'Voltar para rascunho' },
+  { status: 'ENCERRADA', rotulo: 'Encerrar', confirmacao: 'Encerrar a campanha? Novas doações ficarão bloqueadas.' },
+  {
+    status: 'RASCUNHO',
+    rotulo: 'Voltar para rascunho',
+    confirmacao: 'Voltar a campanha para rascunho? Novas doações ficarão bloqueadas.',
+  },
 ]
+
+type AcaoStatus = (typeof ACOES_STATUS)[number]
 
 type EdicaoNecessidade = { aberto: false } | { aberto: true; necessidade: Necessidade | null }
 
@@ -48,6 +54,7 @@ export function CampanhaDetalhePage() {
   const [editandoCampanha, setEditandoCampanha] = useState(false)
   const [edicao, setEdicao] = useState<EdicaoNecessidade>({ aberto: false })
   const [excluindo, setExcluindo] = useState<Necessidade | null>(null)
+  const [confirmandoStatus, setConfirmandoStatus] = useState<AcaoStatus | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
   const campanha = useQuery({ queryKey: ['campanha', id], queryFn: () => buscarCampanha(id) })
@@ -60,7 +67,13 @@ export function CampanhaDetalhePage() {
       void queryClient.invalidateQueries({ queryKey: ['campanhas'] })
     },
     onError: (e) => setErro(e.message),
+    onSettled: () => setConfirmandoStatus(null),
   })
+
+  function escolherStatus(acao: AcaoStatus) {
+    if (acao.confirmacao) setConfirmandoStatus(acao)
+    else mudarStatus.mutate(acao.status)
+  }
 
   const excluir = useMutation({
     mutationFn: (n: Necessidade) => excluirNecessidade(n.id),
@@ -122,7 +135,7 @@ export function CampanhaDetalhePage() {
               </Menu.Target>
               <Menu.Dropdown>
                 {ACOES_STATUS.filter((a) => a.status !== c.status).map((a) => (
-                  <Menu.Item key={a.status} onClick={() => mudarStatus.mutate(a.status)}>
+                  <Menu.Item key={a.status} onClick={() => escolherStatus(a)}>
                     {a.rotulo}
                   </Menu.Item>
                 ))}
@@ -132,6 +145,13 @@ export function CampanhaDetalhePage() {
         )}
       </Group>
       {c.descricao && <Text>{c.descricao}</Text>}
+      {c.status === 'ATIVA' && (
+        <Group>
+          <Button component={Link} to={`/doacoes/nova?campanha=${c.id}`}>
+            Registrar doação
+          </Button>
+        </Group>
+      )}
 
       {erro && (
         <Alert color="red" withCloseButton onClose={() => setErro(null)}>
@@ -202,6 +222,22 @@ export function CampanhaDetalhePage() {
           aoFechar={() => setEdicao({ aberto: false })}
         />
       )}
+      <Modal opened={confirmandoStatus !== null} onClose={() => setConfirmandoStatus(null)} title="Alterar status">
+        <Stack>
+          <Text>{confirmandoStatus?.confirmacao}</Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setConfirmandoStatus(null)}>
+              Cancelar
+            </Button>
+            <Button
+              loading={mudarStatus.isPending}
+              onClick={() => confirmandoStatus && mudarStatus.mutate(confirmandoStatus.status)}
+            >
+              Confirmar
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
       <Modal opened={excluindo !== null} onClose={() => setExcluindo(null)} title="Excluir necessidade">
         <Stack>
           <Text>{`Excluir "${excluindo?.item}"?`}</Text>
