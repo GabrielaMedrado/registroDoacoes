@@ -249,3 +249,19 @@ test('cadastrar novo doador no seletor já o seleciona', async () => {
 
   await waitFor(() => expect(doacoes.registrarDoacao).toHaveBeenCalledWith(expect.objectContaining({ doadorId: 4 })))
 })
+
+test('salvar o novo doador não envia a doação junto', async () => {
+  doadores.criarDoador.mockResolvedValue({ id: 4, nome: 'José', telefone: null, email: null, observacao: null })
+  await abrir()
+  await escolher('Campanha', 'Cesta básica')
+  await escolher('Item 1', 'Arroz')
+  await userEvent.type(screen.getByLabelText('Quantidade 1'), '5')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Cadastrar novo doador' }))
+  const dialogo = await screen.findByRole('dialog')
+  await userEvent.type(within(dialogo).getByLabelText(/Nome/), 'José{Enter}')
+
+  await waitFor(() => expect(doadores.criarDoador).toHaveBeenCalled())
+  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Doador' })).toHaveValue('José'))
+  expect(doacoes.registrarDoacao).not.toHaveBeenCalled()
+})
