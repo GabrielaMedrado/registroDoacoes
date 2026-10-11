@@ -16,6 +16,7 @@ import br.org.iap.doacoes.campanha.Necessidade;
 import br.org.iap.doacoes.campanha.NecessidadeRepository;
 import br.org.iap.doacoes.campanha.StatusCampanha;
 import br.org.iap.doacoes.campanha.Unidade;
+import br.org.iap.doacoes.comum.AcessoNegadoException;
 import br.org.iap.doacoes.comum.CampoInvalidoException;
 import br.org.iap.doacoes.comum.RegraNegocioException;
 import br.org.iap.doacoes.doador.DoadorRepository;
@@ -195,6 +196,64 @@ class DoacaoServiceTest {
 				.isInstanceOf(CampoInvalidoException.class)
 				.hasMessage("Doador não encontrado.")
 				.extracting("campo").isEqualTo("doadorId");
+	}
+
+	private Doacao doacaoDeItensDe(Long autor) {
+		Doacao d = comId(new Doacao(1L, null, TipoDoacao.ITEM, null, null, HOJE, null, autor), 100L);
+		d.substituirItens(List.of(new ItemDoacao(10L, new BigDecimal("5"))));
+		when(doacoes.findById(100L)).thenReturn(Optional.of(d));
+		return d;
+	}
+
+	@Test
+	void voluntarioNaoAlteraDoacaoDeOutro() {
+		doacaoDeItensDe(8L);
+
+		assertThatThrownBy(() -> service.atualizar(100L, itens(1L, HOJE, item(11L, "1")), vitor))
+				.isInstanceOf(AcessoNegadoException.class)
+				.hasMessage("Você só pode alterar doações que você registrou.");
+		assertThatThrownBy(() -> service.excluir(100L, vitor)).isInstanceOf(AcessoNegadoException.class);
+	}
+
+	@Test
+	void adminAlteraDoacaoDeQualquerUm() {
+		doacaoDeItensDe(8L);
+
+		assertThatCode(() -> service.atualizar(100L, itens(1L, HOJE, item(11L, "1")),
+				usuario(1L, "Ana", Papel.ADMIN))).doesNotThrowAnyException();
+	}
+
+	@Test
+	void naoAlteraNemExcluiEmCampanhaEncerrada() {
+		doacaoDeItensDe(7L);
+		campanha1.setStatus(StatusCampanha.ENCERRADA);
+
+		assertThatThrownBy(() -> service.atualizar(100L, itens(1L, HOJE, item(11L, "1")), vitor))
+				.isInstanceOf(RegraNegocioException.class).hasMessage(MSG_NAO_ATIVA);
+		assertThatThrownBy(() -> service.excluir(100L, vitor))
+				.isInstanceOf(RegraNegocioException.class).hasMessage(MSG_NAO_ATIVA);
+	}
+
+	@Test
+	void edicaoTrocaItensEMantemAutor() {
+		Doacao d = doacaoDeItensDe(7L);
+
+		service.atualizar(100L, itens(1L, HOJE, item(11L, "3")), usuario(1L, "Ana", Papel.ADMIN));
+
+		assertThat(d.getRegistradoPorId()).isEqualTo(7L);
+		assertThat(d.getItens()).extracting(ItemDoacao::getNecessidadeId).containsExactly(11L);
+	}
+
+	@Test
+	void edicaoDeItensParaDinheiroRemoveItens() {
+		Doacao d = doacaoDeItensDe(7L);
+
+		service.atualizar(100L, new DoacaoRequest(1L, null, TipoDoacao.DINHEIRO, new BigDecimal("20"),
+				FormaPagamento.ESPECIE, HOJE, null, null), vitor);
+
+		assertThat(d.getItens()).isEmpty();
+		assertThat(d.getValor()).isEqualByComparingTo("20");
+		assertThat(d.getTipo()).isEqualTo(TipoDoacao.DINHEIRO);
 	}
 
 	@Test

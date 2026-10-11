@@ -1,10 +1,14 @@
 package br.org.iap.doacoes.doador;
 
+import br.org.iap.doacoes.auth.UsuarioAutenticado;
 import br.org.iap.doacoes.comum.PaginaResponse;
+import br.org.iap.doacoes.doacao.DoacaoResponse;
+import br.org.iap.doacoes.doacao.DoacaoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,9 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class DoadorController {
 
 	private final DoadorService service;
+	private final DoacaoService doacoes;
 
-	public DoadorController(DoadorService service) {
+	public DoadorController(DoadorService service, DoacaoService doacoes) {
 		this.service = service;
+		this.doacoes = doacoes;
 	}
 
 	@GetMapping
@@ -43,6 +49,14 @@ public class DoadorController {
 	@PutMapping("/{id}")
 	public DoadorResponse atualizar(@PathVariable Long id, @Valid @RequestBody DoadorRequest req) {
 		return service.atualizar(id, req);
+	}
+
+	@GetMapping("/{id}/doacoes")
+	public PaginaResponse<DoacaoResponse> historico(@PathVariable Long id,
+			@RequestParam(defaultValue = "0") int pagina, @RequestParam(defaultValue = "20") int tamanho,
+			@AuthenticationPrincipal UsuarioAutenticado usuario) {
+		service.obter(id);
+		return doacoes.listar(null, null, null, null, id, pagina, tamanho, usuario);
 	}
 
 	@PostMapping("/{id}/anonimizar")

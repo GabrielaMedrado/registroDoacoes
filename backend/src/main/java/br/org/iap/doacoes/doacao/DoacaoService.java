@@ -6,8 +6,10 @@ import br.org.iap.doacoes.campanha.CampanhaService;
 import br.org.iap.doacoes.campanha.Necessidade;
 import br.org.iap.doacoes.campanha.NecessidadeRepository;
 import br.org.iap.doacoes.campanha.StatusCampanha;
+import br.org.iap.doacoes.comum.AcessoNegadoException;
 import br.org.iap.doacoes.comum.CampoInvalidoException;
 import br.org.iap.doacoes.comum.NaoEncontradoException;
+import br.org.iap.doacoes.comum.PaginaResponse;
 import br.org.iap.doacoes.comum.RegraNegocioException;
 import br.org.iap.doacoes.doador.DoadorRepository;
 import java.math.BigDecimal;
@@ -19,6 +21,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +62,42 @@ public class DoacaoService {
 	@Transactional(readOnly = true)
 	public DoacaoResponse buscar(Long id, UsuarioAutenticado usuario) {
 		return montador.montar(obter(id), usuario);
+	}
+
+	@Transactional(readOnly = true)
+	public PaginaResponse<DoacaoResponse> listar(Long campanhaId, LocalDate de, LocalDate ate, TipoDoacao tipo,
+			Long doadorId, int pagina, int tamanho, UsuarioAutenticado usuario) {
+		Sort maisRecentes = Sort.by(Sort.Order.desc("dataDoacao"), Sort.Order.desc("id"));
+		Page<Doacao> page = doacoes.findAll(DoacaoFiltros.de(campanhaId, de, ate, tipo, doadorId),
+				PaginaResponse.pageable(pagina, tamanho, maisRecentes));
+		List<DoacaoResponse> itens = montador.montar(page.getContent(), usuario);
+		return new PaginaResponse<>(itens, page.getNumber(), page.getSize(), page.getTotalElements(),
+				page.getTotalPages());
+	}
+
+	@Transactional
+	public DoacaoResponse atualizar(Long id, DoacaoRequest req, UsuarioAutenticado usuario) {
+		Doacao doacao = obterParaAlterar(id, usuario);
+		List<ItemDoacao> itens = validar(req);
+		doacao.atualizar(req.campanhaId(), req.doadorId(), req.tipo(), valorDe(req), formaDe(req), req.dataDoacao(),
+				req.observacao());
+		doacao.substituirItens(itens);
+		return montador.montar(doacoes.save(doacao), usuario);
+	}
+
+	@Transactional
+	public void excluir(Long id, UsuarioAutenticado usuario) {
+		doacoes.delete(obterParaAlterar(id, usuario));
+	}
+
+	/** R8 e campanha ativa: verificados antes de qualquer alteração ou exclusão. */
+	private Doacao obterParaAlterar(Long id, UsuarioAutenticado usuario) {
+		Doacao doacao = obter(id);
+		if (!DoacaoMontador.podeAlterar(doacao, usuario)) {
+			throw new AcessoNegadoException("Você só pode alterar doações que você registrou.");
+		}
+		exigirAtiva(campanhas.obter(doacao.getCampanhaId()));
+		return doacao;
 	}
 
 	Doacao obter(Long id) {
