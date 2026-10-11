@@ -6,4 +6,5 @@ export const MARIA: Doador = {
   telefone: '(47) 99999-1234',
   email: 'maria@exemplo.org',
   observacao: null,
+  anonimizado: false,
 }

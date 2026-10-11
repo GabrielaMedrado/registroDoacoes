@@ -42,7 +42,7 @@ export function SeletorDoador({ value, onChange, error }: Props) {
     doadores.set(selecionado.id, selecionado)
   }
   // Doadores anonimizados não fazem sentido como escolha: viram "Anônimo".
-  resultado.data?.itens.filter((d) => d.nome !== 'Anônimo').forEach((d) => doadores.set(d.id, d))
+  resultado.data?.itens.filter((d) => !d.anonimizado).forEach((d) => doadores.set(d.id, d))
 
   const opcoes = [
     { value: ANONIMO, label: 'Anônimo' },

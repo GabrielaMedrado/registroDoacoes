@@ -24,3 +24,12 @@ test('aplicarErrosDeCampo devolve false sem erros de campo', () => {
   expect(aplicarErrosDeCampo(form, new ApiError(409, { status: 409, detail: 'Conflito' }))).toBe(false)
   expect(form.setFieldError).not.toHaveBeenCalled()
 })
+
+test('aplicarErrosDeCampo converte itens[0].quantidade (Spring) para itens.0.quantidade (formulário)', () => {
+  const form = { setFieldError: vi.fn() }
+  const erro = new ApiError(400, { status: 400, erros: [{ campo: 'itens[0].quantidade', mensagem: 'Valor inválido' }] })
+
+  aplicarErrosDeCampo(form, erro)
+
+  expect(form.setFieldError).toHaveBeenCalledWith('itens.0.quantidade', 'Valor inválido')
+})

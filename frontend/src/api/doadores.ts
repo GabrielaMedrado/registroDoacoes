@@ -8,9 +8,10 @@ export type Doador = {
   telefone: string | null
   email: string | null
   observacao: string | null
+  anonimizado: boolean
 }
 
-export type DoadorDados = Omit<Doador, 'id'>
+export type DoadorDados = Omit<Doador, 'id' | 'anonimizado'>
 
 export function listarDoadores(busca: string, pagina: number): Promise<Pagina<Doador>> {
   const params = new URLSearchParams()

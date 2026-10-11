@@ -233,7 +233,7 @@ test('editar carrega a doação e salva com atualizarDoacao', async () => {
 })
 
 test('cadastrar novo doador no seletor já o seleciona', async () => {
-  doadores.criarDoador.mockResolvedValue({ id: 4, nome: 'José', telefone: null, email: null, observacao: null })
+  doadores.criarDoador.mockResolvedValue({ id: 4, nome: 'José', telefone: null, email: null, observacao: null, anonimizado: false })
   await abrir()
 
   await userEvent.click(screen.getByRole('button', { name: 'Cadastrar novo doador' }))
@@ -251,7 +251,7 @@ test('cadastrar novo doador no seletor já o seleciona', async () => {
 })
 
 test('salvar o novo doador não envia a doação junto', async () => {
-  doadores.criarDoador.mockResolvedValue({ id: 4, nome: 'José', telefone: null, email: null, observacao: null })
+  doadores.criarDoador.mockResolvedValue({ id: 4, nome: 'José', telefone: null, email: null, observacao: null, anonimizado: false })
   await abrir()
   await escolher('Campanha', 'Cesta básica')
   await escolher('Item 1', 'Arroz')
@@ -264,4 +264,17 @@ test('salvar o novo doador não envia a doação junto', async () => {
   await waitFor(() => expect(doadores.criarDoador).toHaveBeenCalled())
   await waitFor(() => expect(screen.getByRole('combobox', { name: 'Doador' })).toHaveValue('José'))
   expect(doacoes.registrarDoacao).not.toHaveBeenCalled()
+})
+
+test('erro da API numa linha de item aparece junto da quantidade', async () => {
+  doacoes.registrarDoacao.mockRejectedValue(
+    new ApiError(400, { status: 400, erros: [{ campo: 'itens[0].quantidade', mensagem: 'Quantidade grande demais.' }] }),
+  )
+  await abrir()
+  await escolher('Campanha', 'Cesta básica')
+  await escolher('Item 1', 'Arroz')
+  await userEvent.type(screen.getByLabelText('Quantidade 1'), '5')
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar' }))
+
+  expect(await screen.findByText('Quantidade grande demais.')).toBeInTheDocument()
 })

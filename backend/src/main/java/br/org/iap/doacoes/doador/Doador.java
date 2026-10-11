@@ -27,6 +27,8 @@ public class Doador {
 
 	private String observacao;
 
+	private boolean anonimizado;
+
 	@Column(name = "criado_em", nullable = false, updatable = false)
 	private OffsetDateTime criadoEm;
 
@@ -47,6 +49,7 @@ public class Doador {
 	/** R9: apaga os dados pessoais; as doações continuam ligadas a este registro. */
 	public void anonimizar() {
 		atualizar(NOME_ANONIMO, null, null, null);
+		anonimizado = true;
 	}
 
 	@PrePersist
@@ -72,6 +75,10 @@ public class Doador {
 
 	public String getObservacao() {
 		return observacao;
+	}
+
+	public boolean isAnonimizado() {
+		return anonimizado;
 	}
 
 	public OffsetDateTime getCriadoEm() {
