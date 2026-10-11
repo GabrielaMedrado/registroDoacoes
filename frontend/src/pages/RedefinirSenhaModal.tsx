@@ -25,7 +25,7 @@ export function RedefinirSenhaModal({ usuario, aoFechar }: Props) {
   })
 
   return (
-    <Modal opened={usuario !== null} onClose={aoFechar} title="Redefinir senha">
+    <Modal closeOnClickOutside={false} opened={usuario !== null} onClose={aoFechar} title="Redefinir senha">
       <form
         noValidate
         onSubmit={form.onSubmit((v) => {

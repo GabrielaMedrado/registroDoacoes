@@ -1,4 +1,19 @@
-import { Alert, Anchor, Badge, Button, Center, Group, Loader, Menu, Modal, Stack, Table, Text, Title } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Anchor,
+  Badge,
+  Button,
+  Center,
+  Group,
+  Loader,
+  Menu,
+  Modal,
+  Stack,
+  Table,
+  Text,
+  Title,
+} from '@mantine/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -132,39 +147,49 @@ export function CampanhaDetalhePage() {
       {necessidades.isPending && <Loader size="sm" />}
       {necessidades.data?.length === 0 && <Text c="dimmed">Nenhuma necessidade cadastrada.</Text>}
       {necessidades.data && necessidades.data.length > 0 && (
-        <Table.ScrollContainer minWidth={480}>
-          <Table striped>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Item</Table.Th>
-                <Table.Th>Meta</Table.Th>
-                <Table.Th>Observação</Table.Th>
-                {admin && <Table.Th />}
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {necessidades.data.map((n) => (
-                <Table.Tr key={n.id}>
-                  <Table.Td>{n.item}</Table.Td>
-                  <Table.Td>{formatarQuantidade(n.quantidadeMeta, n.unidade)}</Table.Td>
-                  <Table.Td>{n.observacao}</Table.Td>
-                  {admin && (
-                    <Table.Td>
-                      <Group gap="xs" justify="flex-end" wrap="nowrap">
-                        <Button size="xs" variant="light" onClick={() => setEdicao({ aberto: true, necessidade: n })}>
-                          Editar
-                        </Button>
-                        <Button size="xs" variant="subtle" color="red" onClick={() => setExcluindo(n)}>
-                          Excluir
-                        </Button>
-                      </Group>
-                    </Table.Td>
+        <Table striped>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Item</Table.Th>
+              <Table.Th>Meta</Table.Th>
+              <Table.Th visibleFrom="sm">Observação</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {necessidades.data.map((n) => (
+              <Table.Tr key={n.id}>
+                <Table.Td>
+                  {/* Ações ao lado do nome: no celular ficam sempre visíveis, sem arrastar a tabela. */}
+                  <Group gap={4} wrap="nowrap">
+                    {admin && (
+                      <Menu position="bottom-start">
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" color="gray" aria-label={`Ações de ${n.item}`}>
+                            ⋮
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item onClick={() => setEdicao({ aberto: true, necessidade: n })}>Editar</Menu.Item>
+                          <Menu.Item onClick={() => setExcluindo(n)}>
+                            Excluir
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    )}
+                    <Text size="sm">{n.item}</Text>
+                  </Group>
+                  {n.observacao && (
+                    <Text size="xs" c="dimmed" hiddenFrom="sm">
+                      {n.observacao}
+                    </Text>
                   )}
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
+                </Table.Td>
+                <Table.Td>{formatarQuantidade(n.quantidadeMeta, n.unidade)}</Table.Td>
+                <Table.Td visibleFrom="sm">{n.observacao}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
       )}
 
       {editandoCampanha && <CampanhaFormModal aberto campanha={c} aoFechar={() => setEditandoCampanha(false)} />}

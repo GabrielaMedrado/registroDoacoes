@@ -65,7 +65,7 @@ export function CampanhaFormModal({ aberto, campanha, aoFechar, aoSalvar }: Prop
   })
 
   return (
-    <Modal opened={aberto} onClose={aoFechar} title={campanha ? 'Editar campanha' : 'Nova campanha'}>
+    <Modal closeOnClickOutside={false} opened={aberto} onClose={aoFechar} title={campanha ? 'Editar campanha' : 'Nova campanha'}>
       <form
         noValidate
         onSubmit={form.onSubmit((v) => {

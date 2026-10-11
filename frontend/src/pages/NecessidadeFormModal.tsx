@@ -52,7 +52,7 @@ export function NecessidadeFormModal({ campanhaId, necessidade, aberto, aoFechar
   })
 
   return (
-    <Modal opened={aberto} onClose={aoFechar} title={necessidade ? 'Editar necessidade' : 'Nova necessidade'}>
+    <Modal closeOnClickOutside={false} opened={aberto} onClose={aoFechar} title={necessidade ? 'Editar necessidade' : 'Nova necessidade'}>
       <form
         noValidate
         onSubmit={form.onSubmit((v) => {

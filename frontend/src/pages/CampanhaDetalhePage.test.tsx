@@ -53,7 +53,7 @@ test('voluntário não vê botões de edição', async () => {
   await abrir()
   await screen.findByText('Arroz')
 
-  for (const nome of ['Editar campanha', 'Alterar status', 'Adicionar necessidade', 'Editar', 'Excluir']) {
+  for (const nome of ['Editar campanha', 'Alterar status', 'Adicionar necessidade', 'Ações de Arroz']) {
     expect(screen.queryByRole('button', { name: nome })).not.toBeInTheDocument()
   }
 })
@@ -83,15 +83,37 @@ test('admin encerra a campanha', async () => {
   await abrir()
 
   await userEvent.click(screen.getByRole('button', { name: 'Alterar status' }))
-  await userEvent.click(await screen.findByRole('menuitem', { name: 'Encerrar' }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Encerrar', hidden: true }))
 
   await waitFor(() => expect(api.alterarStatusCampanha).toHaveBeenCalledWith(1, 'ENCERRADA'))
 })
 
+test('no celular, as ações ficam junto ao nome do item (sem precisar arrastar a tabela)', async () => {
+  await abrir()
+  const celulaDoItem = (await screen.findByText('Arroz')).closest('td')!
+
+  await userEvent.click(within(celulaDoItem).getByRole('button', { name: 'Ações de Arroz' }))
+
+  expect(await screen.findByRole('menuitem', { name: 'Editar', hidden: true })).toBeInTheDocument()
+  expect(await screen.findByRole('menuitem', { name: 'Excluir', hidden: true })).toBeInTheDocument()
+})
+
+test('tocar fora do formulário não fecha nem perde o que foi digitado', async () => {
+  await abrir()
+  await userEvent.click(screen.getByRole('button', { name: 'Adicionar necessidade' }))
+  const dialogo = await screen.findByRole('dialog')
+  await userEvent.type(within(dialogo).getByLabelText(/Item/), 'Feijão')
+
+  await userEvent.click(document.querySelector('.mantine-Modal-overlay')!)
+
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(within(screen.getByRole('dialog')).getByLabelText(/Item/)).toHaveValue('Feijão')
+})
+
 async function pedirExclusao() {
   await abrir()
-  const linha = (await screen.findByText('Arroz')).closest('tr')!
-  await userEvent.click(within(linha).getByRole('button', { name: 'Excluir' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Ações de Arroz' }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir', hidden: true }))
   return await screen.findByRole('dialog')
 }
 

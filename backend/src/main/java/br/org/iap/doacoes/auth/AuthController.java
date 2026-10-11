@@ -1,6 +1,7 @@
 package br.org.iap.doacoes.auth;
 
 import br.org.iap.doacoes.comum.GlobalExceptionHandler;
+import br.org.iap.doacoes.usuario.Usuario;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -98,8 +99,15 @@ public class AuthController {
 
 	@PutMapping("/minha-senha")
 	public ResponseEntity<Void> alterarSenha(@AuthenticationPrincipal UsuarioAutenticado usuario,
-			@Valid @RequestBody AlterarSenhaRequest req) {
-		contas.alterarSenha(usuario.getId(), req.senhaAtual(), req.novaSenha());
+			@Valid @RequestBody AlterarSenhaRequest req, HttpServletRequest request, HttpServletResponse response) {
+		Usuario atualizado = contas.alterarSenha(usuario.getId(), req.senhaAtual(), req.novaSenha());
+		// Atualiza a sessão atual com a senha nova; as outras sessões desta pessoa caem (SessaoAtualizadaFilter).
+		UsuarioAutenticado principal = new UsuarioAutenticado(atualizado);
+		SecurityContext contexto = SecurityContextHolder.createEmptyContext();
+		contexto.setAuthentication(
+				UsernamePasswordAuthenticationToken.authenticated(principal, null, principal.getAuthorities()));
+		SecurityContextHolder.setContext(contexto);
+		securityContextRepository.saveContext(contexto, request, response);
 		return ResponseEntity.noContent().build();
 	}
 }

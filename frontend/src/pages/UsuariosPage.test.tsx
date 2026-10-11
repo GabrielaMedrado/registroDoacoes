@@ -118,6 +118,21 @@ test('409 ao desativar a si mesmo mostra a mensagem', async () => {
   })
 })
 
+test('tocar fora dos formulários de usuário não os fecha', async () => {
+  const tabela = await abrirPagina()
+
+  await userEvent.click(screen.getByRole('button', { name: 'Novo usuário' }))
+  await userEvent.type(within(await screen.findByRole('dialog')).getByLabelText(/Nome/), 'Bia')
+  await userEvent.click(document.querySelector('.mantine-Modal-overlay')!)
+  expect(within(screen.getByRole('dialog')).getByLabelText(/Nome/)).toHaveValue('Bia')
+  await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+
+  await userEvent.click(within(linhaDe(tabela, 'Vitor')).getByRole('button', { name: 'Redefinir senha' }))
+  await userEvent.type(within(await screen.findByRole('dialog')).getByLabelText(/Nova senha/), 'abc')
+  await userEvent.click(document.querySelector('.mantine-Modal-overlay')!)
+  expect(within(screen.getByRole('dialog')).getByLabelText(/Nova senha/)).toHaveValue('abc')
+})
+
 test('redefine a senha de um usuário', async () => {
   const tabela = await abrirPagina()
 
