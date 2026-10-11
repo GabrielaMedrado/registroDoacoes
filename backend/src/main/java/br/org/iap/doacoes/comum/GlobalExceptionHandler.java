@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,6 +30,11 @@ public class GlobalExceptionHandler {
 		return errosDeCampo(ex.getBindingResult().getFieldErrors().stream()
 				.map(e -> new ErroCampo(e.getField(), e.getDefaultMessage()))
 				.toList());
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ProblemDetail> corpoIlegivel(HttpMessageNotReadableException ex) {
+		return problema(HttpStatus.BAD_REQUEST, "Requisição inválida.");
 	}
 
 	@ExceptionHandler(CampoInvalidoException.class)

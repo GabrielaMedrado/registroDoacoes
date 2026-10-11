@@ -35,6 +35,7 @@ class SessaoAtualizadaTest extends ApiTestSupport {
 
 		alterarDiretoNoBanco(vitor, Papel.VOLUNTARIO, false);
 
+		consultar("/api/campanhas", sessao).andExpect(status().isUnauthorized());
 		consultar("/api/auth/me", sessao).andExpect(status().isUnauthorized());
 	}
 
