@@ -6,6 +6,7 @@ export function aplicarErrosDeCampo(form: { setFieldError(campo: string, msg: st
   if (!erros?.length) {
     return false
   }
-  erros.forEach((e) => form.setFieldError(e.campo, e.mensagem))
+  // O Spring indexa listas como itens[0].quantidade; o formulário usa itens.0.quantidade.
+  erros.forEach((e) => form.setFieldError(e.campo.replace(/\[(\d+)\]/g, '.$1'), e.mensagem))
   return true
 }

@@ -1,6 +1,7 @@
 package br.org.iap.doacoes.doador;
 
 import br.org.iap.doacoes.comum.NaoEncontradoException;
+import br.org.iap.doacoes.comum.RegraNegocioException;
 import br.org.iap.doacoes.comum.PaginaResponse;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,9 @@ public class DoadorService {
 	@Transactional
 	public DoadorResponse atualizar(Long id, DoadorRequest req) {
 		Doador doador = obter(id);
+		if (doador.isAnonimizado()) {
+			throw new RegraNegocioException("Este doador foi anonimizado e não pode ser alterado.");
+		}
 		doador.atualizar(req.nome().trim(), req.telefone(), req.email(), req.observacao());
 		return DoadorResponse.de(repositorio.save(doador));
 	}

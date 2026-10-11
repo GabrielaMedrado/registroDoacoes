@@ -88,4 +88,16 @@ class DoadorApiTest extends ApiTestSupport {
 				.andExpect(jsonPath("$.nome").value("Anônimo"))
 				.andExpect(jsonPath("$.telefone").doesNotExist());
 	}
+
+	@Test
+	void doadorAnonimizadoNaoPodeSerEditado() throws Exception {
+		long id = criarDoador(voluntario, "Maria Souza", "(47) 99999-1234");
+		enviar(post("/api/doadores/" + id + "/anonimizar"), admin, null)
+				.andExpect(jsonPath("$.anonimizado").value(true));
+
+		enviar(put("/api/doadores/" + id), voluntario, "{\"nome\":\"Maria Souza\",\"telefone\":\"(47) 99999-1234\"}")
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail").value("Este doador foi anonimizado e não pode ser alterado."));
+		consultar("/api/doadores/" + id, voluntario).andExpect(jsonPath("$.nome").value("Anônimo"));
+	}
 }

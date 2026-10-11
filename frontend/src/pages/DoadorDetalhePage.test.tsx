@@ -80,3 +80,12 @@ test('voluntário não vê "Anonimizar"', async () => {
   expect(screen.queryByRole('button', { name: 'Anonimizar' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
 })
+
+test('doador anonimizado não pode ser editado nem anonimizado de novo', async () => {
+  api.buscarDoador.mockResolvedValue({ ...MARIA, nome: 'Anônimo', telefone: null, email: null, anonimizado: true })
+  renderComProviders(<App />, { rota: '/doadores/3' })
+  await screen.findByRole('heading', { name: 'Anônimo' })
+
+  expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Anonimizar' })).not.toBeInTheDocument()
+})

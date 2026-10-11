@@ -73,16 +73,19 @@ export function DoadorDetalhePage() {
             </Text>
           )}
         </Stack>
-        <Group gap="xs">
-          <Button variant="light" onClick={() => setEditando(true)}>
-            Editar
-          </Button>
-          {admin && (
-            <Button variant="default" color="red" onClick={() => setConfirmando(true)}>
-              Anonimizar
+        {/* R9: a anonimização é definitiva. */}
+        {!d.anonimizado && (
+          <Group gap="xs">
+            <Button variant="light" onClick={() => setEditando(true)}>
+              Editar
             </Button>
-          )}
-        </Group>
+            {admin && (
+              <Button variant="default" color="red" onClick={() => setConfirmando(true)}>
+                Anonimizar
+              </Button>
+            )}
+          </Group>
+        )}
       </Group>
       {d.observacao && <Text style={{ whiteSpace: 'pre-line' }}>{d.observacao}</Text>}
 
