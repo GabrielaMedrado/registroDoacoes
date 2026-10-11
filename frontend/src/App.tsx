@@ -7,6 +7,7 @@ import { EmConstrucaoPage } from './pages/EmConstrucaoPage'
 import { LoginPage } from './pages/LoginPage'
 import { CampanhaDetalhePage } from './pages/CampanhaDetalhePage'
 import { CampanhasPage } from './pages/CampanhasPage'
+import { DoacaoFormPage } from './pages/DoacaoFormPage'
 import { DoadorDetalhePage } from './pages/DoadorDetalhePage'
 import { DoadoresPage } from './pages/DoadoresPage'
 import { MinhaContaPage } from './pages/MinhaContaPage'
@@ -23,6 +24,8 @@ export default function App() {
             <Route path="campanhas" element={<CampanhasPage />} />
             <Route path="campanhas/:id" element={<CampanhaDetalhePage />} />
             <Route path="doacoes" element={<EmConstrucaoPage titulo="Doações" />} />
+            <Route path="doacoes/nova" element={<DoacaoFormPage />} />
+            <Route path="doacoes/:id/editar" element={<DoacaoFormPage />} />
             <Route path="doadores" element={<DoadoresPage />} />
             <Route path="doadores/:id" element={<DoadorDetalhePage />} />
             <Route path="relatorios" element={<EmConstrucaoPage titulo="Relatórios" />} />
