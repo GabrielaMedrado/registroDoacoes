@@ -9,81 +9,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import br.org.iap.doacoes.TestcontainersConfiguration;
+import br.org.iap.doacoes.ApiTestSupport;
 import br.org.iap.doacoes.usuario.Papel;
 import br.org.iap.doacoes.usuario.Usuario;
-import br.org.iap.doacoes.usuario.UsuarioRepository;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class AuthApiTest {
+class AuthApiTest extends ApiTestSupport {
 
-	private static final String SENHA = "senha-forte-1";
 	private static final String MSG_INVALIDO = "E-mail ou senha inválidos.";
-
-	@Autowired
-	private MockMvc mvc;
-
-	@Autowired
-	private UsuarioRepository usuarios;
-
-	@Autowired
-	private PasswordEncoder encoder;
-
-	@Autowired
-	private LoginAttemptService tentativas;
 
 	@BeforeEach
 	void prepararUsuarios() {
-		usuarios.deleteAll();
-		usuarios.save(new Usuario("Maria", "maria@igreja.org", encoder.encode(SENHA), Papel.VOLUNTARIO));
-		Usuario inativo = new Usuario("Inativo", "inativo@igreja.org", encoder.encode(SENHA), Papel.VOLUNTARIO);
+		limparBanco();
+		criarUsuario("Maria", "maria@igreja.org", Papel.VOLUNTARIO);
+		Usuario inativo = criarUsuario("Inativo", "inativo@igreja.org", Papel.VOLUNTARIO);
 		inativo.setAtivo(false);
 		usuarios.save(inativo);
-		tentativas.registrarSucesso("maria@igreja.org");
-	}
-
-	/**
-	 * Faz o mesmo que o frontend: obtém o cookie XSRF-TOKEN e o devolve no cabeçalho X-XSRF-TOKEN.
-	 * (O csrf() do spring-security-test troca o repositório do filtro compartilhado e mascara o cookie real.)
-	 */
-	private RequestPostProcessor csrf() throws Exception {
-		Cookie token = mvc.perform(get("/api/auth/csrf")).andReturn().getResponse().getCookie("XSRF-TOKEN");
-		return request -> {
-			request.setCookies(token);
-			request.addHeader("X-XSRF-TOKEN", token.getValue());
-			return request;
-		};
 	}
 
 	private static String corpoLogin(String email, String senha) {
 		return "{\"email\":\"" + email + "\",\"senha\":\"" + senha + "\"}";
-	}
-
-	private ResultActions tentarLogin(String email, String senha) throws Exception {
-		return mvc.perform(post("/api/auth/login").with(csrf())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(corpoLogin(email, senha)));
-	}
-
-	private MockHttpSession login(String email, String senha) throws Exception {
-		return (MockHttpSession) tentarLogin(email, senha)
-				.andExpect(status().isOk())
-				.andReturn().getRequest().getSession(false);
 	}
 
 	private ResultActions trocarSenha(MockHttpSession sessao, String atual, String nova) throws Exception {
