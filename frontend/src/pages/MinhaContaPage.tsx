@@ -3,7 +3,7 @@ import { useForm } from '@mantine/form'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { alterarSenha } from '../api/auth'
-import { ApiError } from '../api/client'
+import { aplicarErrosDeCampo } from '../util/erros'
 
 type Valores = { senhaAtual: string; novaSenha: string; confirmacao: string }
 
@@ -27,10 +27,7 @@ export function MinhaContaPage() {
       form.reset()
     },
     onError: (e) => {
-      const erros = e instanceof ApiError ? e.problem?.erros : undefined
-      if (erros?.length) {
-        erros.forEach((erro) => form.setFieldError(erro.campo, erro.mensagem))
-      } else {
+      if (!aplicarErrosDeCampo(form, e)) {
         setErroGeral(e.message)
       }
     },
