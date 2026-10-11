@@ -54,10 +54,15 @@ export function DoadorFormModal({ aberto, doador, aoFechar, aoSalvar }: Props) {
     <Modal closeOnClickOutside={false} opened={aberto} onClose={aoFechar} title={doador ? 'Editar doador' : 'Novo doador'}>
       <form
         noValidate
-        onSubmit={form.onSubmit((v) => {
-          setErroGeral(null)
-          salvar.mutate(paraDados(v))
-        })}
+        onSubmit={(e) => {
+          // O modal pode estar dentro de outro formulário (o da doação): no React o submit
+          // atravessa o portal e enviaria a doação junto.
+          e.stopPropagation()
+          form.onSubmit((v) => {
+            setErroGeral(null)
+            salvar.mutate(paraDados(v))
+          })(e)
+        }}
       >
         <Stack>
           {erroGeral && <Alert color="red">{erroGeral}</Alert>}
