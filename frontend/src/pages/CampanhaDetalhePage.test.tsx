@@ -79,13 +79,41 @@ test('admin adiciona necessidade com quantidade decimal digitada com vírgula', 
   )
 })
 
-test('admin encerra a campanha', async () => {
+test('encerrar pede confirmação antes de chamar a API', async () => {
   await abrir()
 
   await userEvent.click(screen.getByRole('button', { name: 'Alterar status' }))
   await userEvent.click(await screen.findByRole('menuitem', { name: 'Encerrar', hidden: true }))
+  const dialogo = await screen.findByRole('dialog')
+  expect(within(dialogo).getByText('Encerrar a campanha? Novas doações ficarão bloqueadas.')).toBeInTheDocument()
+  expect(api.alterarStatusCampanha).not.toHaveBeenCalled()
+  await userEvent.click(within(dialogo).getByRole('button', { name: 'Confirmar' }))
 
   await waitFor(() => expect(api.alterarStatusCampanha).toHaveBeenCalledWith(1, 'ENCERRADA'))
+})
+
+test('ativar não pede confirmação', async () => {
+  api.buscarCampanha.mockResolvedValue({ ...CAMPANHA, status: 'RASCUNHO' })
+  await abrir()
+
+  await userEvent.click(screen.getByRole('button', { name: 'Alterar status' }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Ativar', hidden: true }))
+
+  await waitFor(() => expect(api.alterarStatusCampanha).toHaveBeenCalledWith(1, 'ATIVA'))
+})
+
+test('campanha ativa mostra "Registrar doação" com a campanha pré-selecionada', async () => {
+  prepararAuth(VOLUNTARIO)
+  await abrir()
+
+  expect(screen.getByRole('link', { name: 'Registrar doação' })).toHaveAttribute('href', '/doacoes/nova?campanha=1')
+})
+
+test('campanha em rascunho não mostra "Registrar doação"', async () => {
+  api.buscarCampanha.mockResolvedValue({ ...CAMPANHA, status: 'RASCUNHO' })
+  await abrir()
+
+  expect(screen.queryByRole('link', { name: 'Registrar doação' })).not.toBeInTheDocument()
 })
 
 test('no celular, as ações ficam junto ao nome do item (sem precisar arrastar a tabela)', async () => {
