@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Alert,
   Anchor,
   Button,
@@ -278,17 +279,20 @@ function FormularioDoacao({ doacao }: { doacao: Doacao | null }) {
                     min={0}
                     hideControls
                     rightSection={<Text size="xs">{unidadeDe(linha.necessidadeId)}</Text>}
-                    rightSectionWidth={56}
+                    rightSectionWidth={40}
                     {...form.getInputProps(`itens.${i}.quantidade`)}
                   />
-                  <Button
+                  {/* Ícone compacto: no celular sobra espaço para a quantidade. */}
+                  <ActionIcon
                     variant="subtle"
                     color="red"
+                    size="input-sm"
+                    aria-label="Remover"
                     disabled={itens.length === 1}
                     onClick={() => form.removeListItem('itens', i)}
                   >
-                    Remover
-                  </Button>
+                    ✕
+                  </ActionIcon>
                 </Group>
               ))}
               {typeof form.errors.itens === 'string' && (
