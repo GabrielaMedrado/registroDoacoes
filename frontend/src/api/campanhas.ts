@@ -34,12 +34,19 @@ export type Necessidade = {
 
 export type NecessidadeDados = Omit<Necessidade, 'id' | 'campanhaId'>
 
-export function listarCampanhas(filtro: { status?: StatusCampanha; pagina: number }): Promise<Pagina<Campanha>> {
+export function listarCampanhas(filtro: {
+  status?: StatusCampanha
+  pagina: number
+  tamanho?: number
+}): Promise<Pagina<Campanha>> {
   const params = new URLSearchParams()
   if (filtro.status) {
     params.set('status', filtro.status)
   }
   params.set('pagina', String(filtro.pagina))
+  if (filtro.tamanho) {
+    params.set('tamanho', String(filtro.tamanho))
+  }
   return api<Pagina<Campanha>>(`/api/campanhas?${params}`)
 }
 
