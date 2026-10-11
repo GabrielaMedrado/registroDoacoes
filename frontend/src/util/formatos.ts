@@ -1,3 +1,4 @@
+import type { Papel } from '../api/auth'
 import type { StatusCampanha, Unidade } from '../api/campanhas'
 
 const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -38,3 +39,5 @@ export const ROTULO_UNIDADE: Record<Unidade, string> = {
   CAIXA: 'caixa(s)',
   PAR: 'par(es)',
 }
+
+export const ROTULO_PAPEL: Record<Papel, string> = { ADMIN: 'Administrador', VOLUNTARIO: 'Voluntário' }
