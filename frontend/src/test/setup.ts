@@ -21,6 +21,12 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 })
 
+// O Textarea com autosize escuta document.fonts, que o jsdom também não tem.
+Object.defineProperty(document, 'fonts', {
+  configurable: true,
+  value: { addEventListener: () => {}, removeEventListener: () => {}, ready: Promise.resolve() },
+})
+
 class ResizeObserverFalso {
   observe() {}
   unobserve() {}
