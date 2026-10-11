@@ -18,8 +18,8 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Relê o usuário logado a cada requisição da API: desativação encerra a sessão (401) e mudanças de
- * papel ou nome passam a valer imediatamente, sem novo login.
+ * Relê o usuário logado a cada requisição da API: desativação ou troca de senha encerram a sessão (401) e
+ * mudanças de papel ou nome passam a valer imediatamente, sem novo login.
  */
 public class SessaoAtualizadaFilter extends OncePerRequestFilter {
 
@@ -33,7 +33,10 @@ public class SessaoAtualizadaFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
-		return !request.getRequestURI().startsWith("/api/");
+		String uri = request.getRequestURI();
+		// Login e CSRF ficam de fora: um cookie velho (ex.: de alguém desativado num celular compartilhado)
+		// não pode impedir outra pessoa de entrar.
+		return !uri.startsWith("/api/") || uri.equals("/api/auth/login") || uri.equals("/api/auth/csrf");
 	}
 
 	@Override
@@ -45,7 +48,10 @@ public class SessaoAtualizadaFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		Optional<Usuario> atual = usuarios.findById(logado.getId()).filter(Usuario::isAtivo);
+		// Senha trocada (ex.: ADMIN redefiniu porque o celular foi perdido) também encerra a sessão.
+		Optional<Usuario> atual = usuarios.findById(logado.getId())
+				.filter(Usuario::isAtivo)
+				.filter(u -> Objects.equals(u.getSenhaHash(), logado.getPassword()));
 		if (atual.isEmpty()) {
 			encerrarSessao(request);
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);

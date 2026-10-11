@@ -27,7 +27,7 @@ public class ContaService {
 	}
 
 	@Transactional
-	public void alterarSenha(Long usuarioId, String senhaAtual, String novaSenha) {
+	public Usuario alterarSenha(Long usuarioId, String senhaAtual, String novaSenha) {
 		Usuario usuario = usuarios.findById(usuarioId)
 				.orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado."));
 		if (!encoder.matches(senhaAtual, usuario.getSenhaHash())) {
@@ -35,5 +35,6 @@ public class ContaService {
 		}
 		PoliticaSenha.validar("novaSenha", novaSenha);
 		usuario.setSenhaHash(encoder.encode(novaSenha));
+		return usuario;
 	}
 }

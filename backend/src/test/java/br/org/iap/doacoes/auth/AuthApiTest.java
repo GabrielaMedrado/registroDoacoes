@@ -177,6 +177,15 @@ class AuthApiTest extends ApiTestSupport {
 	}
 
 	@Test
+	void trocarAPropriaSenhaMantemASessaoAtual() throws Exception {
+		MockHttpSession sessao = login("maria@igreja.org", SENHA);
+
+		trocarSenha(sessao, SENHA, "nova-senha-1").andExpect(status().isNoContent());
+
+		mvc.perform(get("/api/auth/me").session(sessao)).andExpect(status().isOk());
+	}
+
+	@Test
 	void minhaSenhaSemSessaoRetorna401() throws Exception {
 		mvc.perform(put("/api/auth/minha-senha").with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)

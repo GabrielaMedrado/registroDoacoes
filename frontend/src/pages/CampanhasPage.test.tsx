@@ -92,6 +92,15 @@ test('admin cria campanha com meta em reais', async () => {
   )
 })
 
+test('tocar fora do formulário de campanha não o fecha', async () => {
+  const dialogo = await abrirFormulario()
+  await userEvent.type(within(dialogo).getByLabelText(/Título/), 'Natal feliz')
+
+  await userEvent.click(document.querySelector('.mantine-Modal-overlay')!)
+
+  expect(within(screen.getByRole('dialog')).getByLabelText(/Título/)).toHaveValue('Natal feliz')
+})
+
 test('término antes do início é bloqueado no formulário', async () => {
   const dialogo = await abrirFormulario()
 

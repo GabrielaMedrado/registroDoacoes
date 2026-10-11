@@ -53,7 +53,7 @@ export function UsuarioFormModal({ aberto, usuario, aoFechar }: Props) {
   })
 
   return (
-    <Modal opened={aberto} onClose={aoFechar} title={criando ? 'Novo usuário' : 'Editar usuário'}>
+    <Modal closeOnClickOutside={false} opened={aberto} onClose={aoFechar} title={criando ? 'Novo usuário' : 'Editar usuário'}>
       <form
         noValidate
         onSubmit={form.onSubmit((v) => {
