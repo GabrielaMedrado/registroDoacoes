@@ -13,6 +13,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    // Fuso fixo: testes de data não podem depender da máquina ou do CI (que roda em UTC).
+    env: { TZ: 'America/Sao_Paulo' },
     css: false,
   },
 })
