@@ -168,7 +168,7 @@ function PorPeriodo() {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Data</Table.Th>
-                <Table.Th visibleFrom="sm">Campanha</Table.Th>
+                <Table.Th className="oculto-no-celular">Campanha</Table.Th>
                 <Table.Th>Doador</Table.Th>
                 <Table.Th>Descrição</Table.Th>
                 <Table.Th>Valor</Table.Th>
@@ -178,7 +178,7 @@ function PorPeriodo() {
               {r.doacoes.map((d) => (
                 <Table.Tr key={d.id}>
                   <Table.Td>{formatarData(d.dataDoacao)}</Table.Td>
-                  <Table.Td visibleFrom="sm">{d.campanhaTitulo}</Table.Td>
+                  <Table.Td className="oculto-no-celular">{d.campanhaTitulo}</Table.Td>
                   <Table.Td>{d.doadorNome}</Table.Td>
                   <Table.Td>{d.descricao}</Table.Td>
                   <Table.Td>{d.valor == null ? '' : formatarMoeda(d.valor)}</Table.Td>

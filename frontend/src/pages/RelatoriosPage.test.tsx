@@ -169,6 +169,15 @@ test('mostra totais e link do CSV com os filtros', async () => {
   )
 })
 
+test('a coluna Campanha do relatório por período não some na impressão', async () => {
+  await abrir('Doações por período')
+  await screen.findByText('Maria')
+
+  const cabecalho = screen.getByRole('columnheader', { name: 'Campanha' })
+  expect(cabecalho).toHaveClass('oculto-no-celular')
+  expect(cabecalho).not.toHaveClass('mantine-visible-from-sm')
+})
+
 test('período sem doações mostra mensagem', async () => {
   relatorios.buscarRelatorioDoacoes.mockResolvedValue({
     ...RELATORIO,

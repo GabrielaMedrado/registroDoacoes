@@ -38,6 +38,11 @@ class CsvWriterTest {
 	}
 
 	@Test
+	void neutralizaFormulaComTabOuRetornoNoInicio() {
+		assertThat(texto(new CsvWriter().linha("\t=1+1", "\r=1+1"))).isEqualTo("'\t=1+1;\"'\r=1+1\"\r\n");
+	}
+
+	@Test
 	void acentosSobrevivem() {
 		assertThat(texto(new CsvWriter().linha("Feijão", "Doação"))).isEqualTo("Feijão;Doação\r\n");
 	}
