@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { listarCampanhas } from '../api/campanhas'
 import { excluirDoacao, listarDoacoes, type Doacao, type FiltroDoacoes, type TipoDoacao } from '../api/doacoes'
+import { invalidarTotais } from '../api/progresso'
 import { formatarData, resumoDoacao } from '../util/formatos'
 
 const TIPOS = [
@@ -44,7 +45,10 @@ export function DoacoesPage() {
 
   const excluir = useMutation({
     mutationFn: (d: Doacao) => excluirDoacao(d.id),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['doacoes'] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['doacoes'] })
+      await invalidarTotais(queryClient)
+    },
     onError: (e) => setErro(e.message),
     onSettled: () => setExcluindo(null),
   })

@@ -31,6 +31,7 @@ import {
   type FormaPagamento,
   type TipoDoacao,
 } from '../api/doacoes'
+import { invalidarTotais } from '../api/progresso'
 import { SeletorDoador } from '../components/SeletorDoador'
 import { aplicarErrosDeCampo } from '../util/erros'
 import { hojeISO, ROTULO_FORMA, ROTULO_UNIDADE } from '../util/formatos'
@@ -188,6 +189,7 @@ function FormularioDoacao({ doacao }: { doacao: Doacao | null }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['doacoes'] })
       await queryClient.invalidateQueries({ queryKey: ['doador'] })
+      await invalidarTotais(queryClient)
       if (doacao) {
         navigate('/doacoes')
         return

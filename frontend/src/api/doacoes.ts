@@ -35,7 +35,14 @@ export type DoacaoDados = {
   itens: { necessidadeId: number; quantidade: number }[]
 }
 
-export type FiltroDoacoes = { campanhaId?: number; de?: string; ate?: string; tipo?: TipoDoacao; pagina: number }
+export type FiltroDoacoes = {
+  campanhaId?: number
+  de?: string
+  ate?: string
+  tipo?: TipoDoacao
+  pagina: number
+  tamanho?: number
+}
 
 export function listarDoacoes(filtro: FiltroDoacoes): Promise<Pagina<Doacao>> {
   const params = new URLSearchParams()
@@ -44,6 +51,7 @@ export function listarDoacoes(filtro: FiltroDoacoes): Promise<Pagina<Doacao>> {
   if (filtro.ate) params.set('ate', filtro.ate)
   if (filtro.tipo) params.set('tipo', filtro.tipo)
   params.set('pagina', String(filtro.pagina))
+  if (filtro.tamanho) params.set('tamanho', String(filtro.tamanho))
   return api<Pagina<Doacao>>(`/api/doacoes?${params}`)
 }
 

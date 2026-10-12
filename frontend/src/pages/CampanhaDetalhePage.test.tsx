@@ -2,14 +2,20 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as campanhasApi from '../api/campanhas'
-import type { Campanha, Necessidade } from '../api/campanhas'
+import type { Campanha } from '../api/campanhas'
 import { ApiError } from '../api/client'
+import * as doacoesApi from '../api/doacoes'
+import type { Doacao } from '../api/doacoes'
+import * as progressoApi from '../api/progresso'
+import type { NecessidadeProgresso, ProgressoCampanha } from '../api/progresso'
 import App from '../App'
 import { ADMIN, prepararAuth, VOLUNTARIO } from '../test/mockAuth'
 import { renderComProviders } from '../test/render'
 
 vi.mock('../api/auth', async () => (await import('../test/mockAuth')).authMock)
 vi.mock('../api/campanhas')
+vi.mock('../api/doacoes')
+vi.mock('../api/progresso')
 
 const CAMPANHA: Campanha = {
   id: 1,
@@ -20,16 +26,65 @@ const CAMPANHA: Campanha = {
   status: 'ATIVA',
   metaValor: null,
 }
-const ARROZ: Necessidade = { id: 10, campanhaId: 1, item: 'Arroz', unidade: 'KG', quantidadeMeta: 50, observacao: null }
+const ARROZ: NecessidadeProgresso = {
+  id: 10,
+  item: 'Arroz',
+  unidade: 'KG',
+  quantidadeMeta: 10,
+  observacao: null,
+  arrecadado: 5,
+  pendente: 5,
+  excedente: 0,
+  percentual: 50,
+}
+const FEIJAO: NecessidadeProgresso = {
+  id: 11,
+  item: 'Feijão',
+  unidade: 'KG',
+  quantidadeMeta: 4,
+  observacao: 'Carioca',
+  arrecadado: 6,
+  pendente: 0,
+  excedente: 2,
+  percentual: 100,
+}
+const PROGRESSO: ProgressoCampanha = {
+  campanhaId: 1,
+  titulo: 'Cesta básica',
+  status: 'ATIVA',
+  percentualGeral: 75,
+  totalDinheiro: 75.5,
+  metaValor: 200,
+  percentualValor: 37,
+  necessidades: [ARROZ, FEIJAO],
+}
+const DOACAO: Doacao = {
+  id: 50,
+  campanhaId: 1,
+  campanhaTitulo: 'Cesta básica',
+  doadorId: null,
+  doadorNome: null,
+  tipo: 'ITEM',
+  valor: null,
+  formaPagamento: null,
+  dataDoacao: '2026-10-11',
+  observacao: null,
+  registradoPorNome: 'Vitor',
+  itens: [{ necessidadeId: 10, item: 'Arroz', unidade: 'KG', quantidade: 5 }],
+  podeAlterar: true,
+}
 
 const api = vi.mocked(campanhasApi)
+const progresso = vi.mocked(progressoApi)
+const doacoes = vi.mocked(doacoesApi)
 
 beforeEach(() => {
   vi.clearAllMocks()
   prepararAuth(ADMIN)
   api.buscarCampanha.mockResolvedValue(CAMPANHA)
-  api.listarNecessidades.mockResolvedValue([ARROZ])
-  api.criarNecessidade.mockResolvedValue({ ...ARROZ, id: 11, item: 'Feijão' })
+  progresso.buscarProgresso.mockResolvedValue(PROGRESSO)
+  doacoes.listarDoacoes.mockResolvedValue({ itens: [DOACAO], pagina: 0, tamanho: 5, total: 1, totalPaginas: 1 })
+  api.criarNecessidade.mockResolvedValue({ ...ARROZ, campanhaId: 1, id: 12, item: 'Óleo' })
   api.alterarStatusCampanha.mockResolvedValue({ ...CAMPANHA, status: 'ENCERRADA' })
   api.excluirNecessidade.mockResolvedValue(undefined)
 })
@@ -44,8 +99,79 @@ test('mostra dados da campanha e necessidades', async () => {
 
   expect(screen.getByText('Alimentos para 30 famílias')).toBeInTheDocument()
   expect(await screen.findByText('Arroz')).toBeInTheDocument()
-  expect(screen.getByText('50 kg')).toBeInTheDocument()
+  expect(screen.getByText('Carioca')).toBeInTheDocument()
   expect(api.buscarCampanha).toHaveBeenCalledWith(1)
+  expect(progresso.buscarProgresso).toHaveBeenCalledWith(1)
+})
+
+async function linhaDe(item: string) {
+  return (await screen.findByText(item)).closest('tr')!
+}
+
+test('mostra meta, arrecadado e pendente de cada necessidade', async () => {
+  await abrir()
+  const linha = await linhaDe('Arroz')
+
+  expect(within(linha).getByText('10 kg')).toBeInTheDocument()
+  expect(within(linha).getAllByText('5 kg')).toHaveLength(2)
+  expect(within(linha).getByRole('progressbar', { name: 'Progresso de Arroz' })).toHaveAttribute(
+    'aria-valuenow',
+    '50',
+  )
+})
+
+test('arrecadado acima da meta mostra excedente e barra em 100%', async () => {
+  await abrir()
+  const linha = await linhaDe('Feijão')
+
+  expect(within(linha).getByText('+2 kg acima da meta')).toBeInTheDocument()
+  expect(within(linha).getByRole('progressbar', { name: 'Progresso de Feijão' })).toHaveAttribute(
+    'aria-valuenow',
+    '100',
+  )
+})
+
+test('mostra progresso geral e total em dinheiro', async () => {
+  await abrir()
+
+  expect(await screen.findByRole('progressbar', { name: 'Progresso dos itens' })).toHaveAttribute(
+    'aria-valuenow',
+    '75',
+  )
+  expect(screen.getByText('Arrecadado em dinheiro: R$ 75,50 de R$ 200,00')).toBeInTheDocument()
+  expect(screen.getByRole('progressbar', { name: 'Arrecadação em dinheiro' })).toHaveAttribute('aria-valuenow', '37')
+})
+
+test('sem meta em dinheiro mostra só o total arrecadado', async () => {
+  progresso.buscarProgresso.mockResolvedValue({ ...PROGRESSO, metaValor: null, percentualValor: null })
+  await abrir()
+
+  expect(await screen.findByText('Arrecadado em dinheiro: R$ 75,50')).toBeInTheDocument()
+  expect(screen.queryByRole('progressbar', { name: 'Arrecadação em dinheiro' })).not.toBeInTheDocument()
+})
+
+test('campanha sem necessidades não mostra barra de itens', async () => {
+  progresso.buscarProgresso.mockResolvedValue({ ...PROGRESSO, percentualGeral: null, necessidades: [] })
+  await abrir()
+
+  expect(await screen.findByText('Nenhuma necessidade cadastrada.')).toBeInTheDocument()
+  expect(screen.queryByRole('progressbar', { name: 'Progresso dos itens' })).not.toBeInTheDocument()
+})
+
+test('lista as últimas doações', async () => {
+  await abrir()
+
+  const secao = (await screen.findByRole('heading', { name: 'Últimas doações' })).parentElement!
+  expect(await within(secao).findByText('Arroz 5 kg')).toBeInTheDocument()
+  expect(within(secao).getByText('Anônimo')).toBeInTheDocument()
+  expect(doacoes.listarDoacoes).toHaveBeenCalledWith({ campanhaId: 1, pagina: 0, tamanho: 5 })
+})
+
+test('sem doações mostra mensagem', async () => {
+  doacoes.listarDoacoes.mockResolvedValue({ itens: [], pagina: 0, tamanho: 5, total: 0, totalPaginas: 0 })
+  await abrir()
+
+  expect(await screen.findByText('Nenhuma doação registrada.')).toBeInTheDocument()
 })
 
 test('voluntário não vê botões de edição', async () => {
@@ -63,7 +189,7 @@ test('admin adiciona necessidade com quantidade decimal digitada com vírgula', 
 
   await userEvent.click(screen.getByRole('button', { name: 'Adicionar necessidade' }))
   const dialogo = await screen.findByRole('dialog')
-  await userEvent.type(within(dialogo).getByLabelText(/Item/), 'Feijão')
+  await userEvent.type(within(dialogo).getByLabelText(/Item/), 'Óleo')
   await userEvent.click(within(dialogo).getByRole('combobox', { name: /Unidade/ }))
   await userEvent.click(await screen.findByRole('option', { name: 'kg', hidden: true }))
   await userEvent.type(within(dialogo).getByLabelText(/Quantidade/), '2,5')
@@ -71,7 +197,7 @@ test('admin adiciona necessidade com quantidade decimal digitada com vírgula', 
 
   await waitFor(() =>
     expect(api.criarNecessidade).toHaveBeenCalledWith(1, {
-      item: 'Feijão',
+      item: 'Óleo',
       unidade: 'KG',
       quantidadeMeta: 2.5,
       observacao: null,
