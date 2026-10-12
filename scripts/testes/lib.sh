@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Mini-framework dos testes dos scripts: cópia isolada do projeto e um `docker` falso no PATH.
-# Variáveis do docker falso: DOCKER_FALHA=1 (sai com 1), DOCKER_SAIDA (o que escreve no stdout).
+# Variáveis do docker falso: DOCKER_FALHA=1 (sai com 1), DOCKER_FALHA_EM=<trecho> (sai com 1 só nas chamadas
+# que contêm o trecho), DOCKER_SAIDA (o que escreve no stdout).
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -18,6 +19,7 @@ preparar_projeto() {
 #!/usr/bin/env bash
 echo "APP_VERSAO=${APP_VERSAO:-} $*" >> "$LOG_DOCKER"
 if [[ "${DOCKER_FALHA:-0}" == 1 ]]; then exit 1; fi
+if [[ -n "${DOCKER_FALHA_EM:-}" && "$*" == *"$DOCKER_FALHA_EM"* ]]; then exit 1; fi
 printf '%s' "${DOCKER_SAIDA-}"
 FALSO
 	chmod +x "$TMP/bin/docker"

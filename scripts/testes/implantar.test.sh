@@ -54,5 +54,33 @@ pull_que_falha_para_antes_do_up() {
 	[[ ! -e "$PROJ/verificador.log" ]] || falhar "não deveria verificar"
 }
 
+com_backup_sobe_o_banco_e_faz_o_dump_antes_da_troca() {
+	verificador_falso
+	DOCKER_SAIDA="PGDMP" "$PROJ/scripts/implantar.sh" v1.2.3 --backup > /dev/null
+	afirmar_igual "APP_VERSAO= compose up -d --wait db" "$(sed -n 1p "$LOG_DOCKER")"
+	afirmar_contem "$(sed -n 2p "$LOG_DOCKER")" "compose exec -T db"
+	afirmar_igual "APP_VERSAO=v1.2.3 compose pull app" "$(sed -n 3p "$LOG_DOCKER")"
+	afirmar_igual "APP_VERSAO=v1.2.3 compose up -d app" "$(sed -n 4p "$LOG_DOCKER")"
+	afirmar_igual 1 "$(find "$PROJ/backups" -name 'doacoes-*.dump' | wc -l | tr -d ' ')"
+}
+
+backup_que_falha_para_antes_da_troca() {
+	verificador_falso
+	local saida status=0
+	saida=$(DOCKER_FALHA_EM="exec" "$PROJ/scripts/implantar.sh" v1.2.3 --backup 2>&1) || status=$?
+	afirmar_igual 1 "$status"
+	afirmar_contem "$saida" "Backup falhou; nenhum arquivo foi gravado."
+	afirmar_nao_contem "$(cat "$LOG_DOCKER")" "pull app"
+	[[ ! -e "$PROJ/verificador.log" ]] || falhar "não deveria verificar"
+}
+
+opcao_desconhecida_e_recusada() {
+	local status=0
+	"$PROJ/scripts/implantar.sh" v1.2.3 --bakup > /dev/null 2>&1 || status=$?
+	afirmar_igual 2 "$status"
+	afirmar_igual "" "$(cat "$LOG_DOCKER")"
+}
+
 rodar_testes versao_invalida_e_recusada implanta_a_versao_pedida app_que_nao_sobe_falha \
-	pull_que_falha_para_antes_do_up
+	pull_que_falha_para_antes_do_up com_backup_sobe_o_banco_e_faz_o_dump_antes_da_troca \
+	backup_que_falha_para_antes_da_troca opcao_desconhecida_e_recusada

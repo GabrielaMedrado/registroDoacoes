@@ -18,7 +18,7 @@ inputs:
     description: Tag publicada pela release (vX.Y.Z)
     required: true
   backup:
-    description: "'true' para rodar scripts/backup.sh antes de trocar a versão"
+    description: "'true' para subir o banco e rodar scripts/backup.sh antes de trocar a versão"
     required: false
     default: "false"
 
@@ -56,9 +56,11 @@ runs:
           "$destino:registro-doacoes/scripts/"
         ssh "${opcoes[@]}" "$destino" 'chmod +x ~/registro-doacoes/scripts/*.sh'
 
+        # --backup: o implantar.sh sobe o banco, faz o backup e só troca a versão se ele der certo.
+        opcao=""
         if [[ "$BACKUP" == true ]]; then
-          ssh "${opcoes[@]}" "$destino" 'cd ~/registro-doacoes && ./scripts/backup.sh'
+          opcao="--backup"
         fi
         # A versão já foi validada acima; ela precisa mesmo ser expandida aqui, no runner.
         # shellcheck disable=SC2029
-        ssh "${opcoes[@]}" "$destino" "cd ~/registro-doacoes && ./scripts/implantar.sh $VERSAO"
+        ssh "${opcoes[@]}" "$destino" "cd ~/registro-doacoes && ./scripts/implantar.sh $VERSAO $opcao"
