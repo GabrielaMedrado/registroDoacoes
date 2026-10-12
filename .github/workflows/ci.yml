@@ -55,3 +55,14 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -x scripts/*.sh scripts/testes/*.sh
+
+      - name: Testes dos scripts
+        run: bash scripts/testes/todos.sh
