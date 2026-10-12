@@ -33,3 +33,6 @@ class ResizeObserverFalso {
   disconnect() {}
 }
 window.ResizeObserver = ResizeObserverFalso
+
+// O Combobox do Mantine rola a opção ativa para a vista; o jsdom não implementa scrollIntoView.
+Element.prototype.scrollIntoView = () => {}
