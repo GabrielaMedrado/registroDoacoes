@@ -158,6 +158,33 @@ class RelatorioApiTest extends CenarioApiTestSupport {
 	}
 
 	@Test
+	void pendenciasEmTextoPuro() throws Exception {
+		doarItem(agasalho, arroz, "5");
+
+		consultar("/api/relatorios/pendencias", voluntario)
+				.andExpect(status().isOk())
+				.andExpect(header().string("Content-Type", "text/plain;charset=UTF-8"))
+				.andExpect(content().string(containsString("*Agasalho*\nAinda precisamos de:\n• Arroz: 5 kg\n")));
+	}
+
+	@Test
+	void pendenciasFiltraPorCampanha() throws Exception {
+		long natal = criarCampanhaAtiva("Natal");
+		criarNecessidade(natal, "Brinquedo", "UNIDADE", "20");
+
+		consultar("/api/relatorios/pendencias?campanhaId=" + natal, voluntario)
+				.andExpect(content().string("*Natal*\nAinda precisamos de:\n• Brinquedo: 20 unidade(s)"));
+	}
+
+	@Test
+	void campanhaEncerradaNaoTemPendencias() throws Exception {
+		mudarStatus(agasalho, "ENCERRADA");
+
+		consultar("/api/relatorios/pendencias?campanhaId=" + agasalho, voluntario)
+				.andExpect(content().string("Nenhuma pendência nas campanhas ativas."));
+	}
+
+	@Test
 	void csvNaoQuebraComTituloDeFormula() throws Exception {
 		long formula = criarCampanhaAtiva("=HYPERLINK(1)");
 

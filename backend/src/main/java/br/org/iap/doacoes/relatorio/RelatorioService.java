@@ -1,6 +1,8 @@
 package br.org.iap.doacoes.relatorio;
 
 import br.org.iap.doacoes.auth.UsuarioAutenticado;
+import br.org.iap.doacoes.campanha.CampanhaRepository;
+import br.org.iap.doacoes.campanha.StatusCampanha;
 import br.org.iap.doacoes.comum.CampoInvalidoException;
 import br.org.iap.doacoes.comum.CsvWriter;
 import br.org.iap.doacoes.comum.Formatos;
@@ -35,11 +37,14 @@ public class RelatorioService {
 	private final ProgressoService progresso;
 	private final DoacaoRepository doacoes;
 	private final DoacaoMontador montador;
+	private final CampanhaRepository campanhas;
 
-	public RelatorioService(ProgressoService progresso, DoacaoRepository doacoes, DoacaoMontador montador) {
+	public RelatorioService(ProgressoService progresso, DoacaoRepository doacoes, DoacaoMontador montador,
+			CampanhaRepository campanhas) {
 		this.progresso = progresso;
 		this.doacoes = doacoes;
 		this.montador = montador;
+		this.campanhas = campanhas;
 	}
 
 	public ProgressoCampanhaResponse campanha(Long id) {
@@ -92,6 +97,33 @@ public class RelatorioService {
 		}
 		return csv.linha("Total em dinheiro", null, null, null, null, Formatos.numero(r.totalDinheiro()))
 				.paraBytes();
+	}
+
+	/**
+	 * Texto pronto para colar no WhatsApp com o que ainda falta nas campanhas ativas (ou só na indicada, se
+	 * ativa). Campanhas sem nada pendente ficam de fora.
+	 */
+	@Transactional(readOnly = true)
+	public String pendencias(Long campanhaId) {
+		List<String> blocos = progresso.dasCampanhas(campanhas.findByStatusOrderByTituloAsc(StatusCampanha.ATIVA))
+				.stream()
+				.filter(c -> campanhaId == null || campanhaId.equals(c.campanhaId()))
+				.map(RelatorioService::blocoDePendencias)
+				.filter(bloco -> !bloco.isEmpty())
+				.toList();
+		return blocos.isEmpty() ? "Nenhuma pendência nas campanhas ativas." : String.join("\n\n", blocos);
+	}
+
+	private static String blocoDePendencias(ProgressoCampanhaResponse c) {
+		List<String> itens = c.necessidades().stream()
+				.filter(n -> n.pendente().signum() > 0)
+				.sorted(Comparator.comparing(NecessidadeProgresso::item, ALFABETICA))
+				.map(n -> "• " + n.item() + ": " + Formatos.quantidade(n.pendente()) + " " + n.unidade().rotulo())
+				.toList();
+		if (itens.isEmpty()) {
+			return "";
+		}
+		return "*" + c.titulo() + "*\nAinda precisamos de:\n" + String.join("\n", itens);
 	}
 
 	private static void validarPeriodo(LocalDate de, LocalDate ate) {
