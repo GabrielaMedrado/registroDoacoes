@@ -1,8 +1,11 @@
 package br.org.iap.doacoes.progresso;
 
 import br.org.iap.doacoes.campanha.Campanha;
+import br.org.iap.doacoes.campanha.CampanhaRepository;
 import br.org.iap.doacoes.campanha.CampanhaService;
+import br.org.iap.doacoes.campanha.StatusCampanha;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,12 +16,43 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProgressoService {
 
+	static final int LIMITE_PENDENCIAS = 10;
+
+	/**
+	 * Mais urgentes primeiro: menor percentual (quantidades em unidades diferentes não se comparam),
+	 * depois maior pendente, campanha e item.
+	 */
+	private static final Comparator<PendenciaResponse> URGENCIA = Comparator
+			.comparingInt(PendenciaResponse::percentual)
+			.thenComparing(PendenciaResponse::pendente, Comparator.reverseOrder())
+			.thenComparing(PendenciaResponse::campanhaTitulo)
+			.thenComparing(PendenciaResponse::item);
+
 	private final ProgressoRepository repositorio;
 	private final CampanhaService campanhas;
+	private final CampanhaRepository campanhaRepository;
 
-	public ProgressoService(ProgressoRepository repositorio, CampanhaService campanhas) {
+	public ProgressoService(ProgressoRepository repositorio, CampanhaService campanhas,
+			CampanhaRepository campanhaRepository) {
 		this.repositorio = repositorio;
 		this.campanhas = campanhas;
+		this.campanhaRepository = campanhaRepository;
+	}
+
+	/** Campanhas ativas (por título) e as necessidades com maior pendência entre elas. */
+	@Transactional(readOnly = true)
+	public PainelResponse painel() {
+		List<ProgressoCampanhaResponse> ativas = dasCampanhas(
+				campanhaRepository.findByStatusOrderByTituloAsc(StatusCampanha.ATIVA));
+		List<PendenciaResponse> pendencias = ativas.stream()
+				.flatMap(c -> c.necessidades().stream()
+						.filter(n -> n.pendente().signum() > 0)
+						.map(n -> new PendenciaResponse(c.campanhaId(), c.titulo(), n.id(), n.item(), n.unidade(),
+								n.pendente(), n.percentual())))
+				.sorted(URGENCIA)
+				.limit(LIMITE_PENDENCIAS)
+				.toList();
+		return new PainelResponse(ativas, pendencias);
 	}
 
 	@Transactional(readOnly = true)
