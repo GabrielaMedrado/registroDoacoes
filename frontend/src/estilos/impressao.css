@@ -1,0 +1,20 @@
+/* Impressão dos relatórios pelo navegador: só o conteúdo, sem menu, filtros nem botões. */
+.so-impressao {
+  display: none;
+}
+
+@media print {
+  .nao-imprimir,
+  .mantine-AppShell-header,
+  .mantine-AppShell-navbar {
+    display: none !important;
+  }
+
+  .so-impressao {
+    display: block;
+  }
+
+  .mantine-AppShell-main {
+    padding: 0 !important;
+  }
+}
