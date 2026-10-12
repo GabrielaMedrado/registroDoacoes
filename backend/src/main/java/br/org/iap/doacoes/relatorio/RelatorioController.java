@@ -48,6 +48,11 @@ public class RelatorioController {
 		return ResponseEntity.ok(service.doacoes(de, ate, campanhaId, tipo, usuario));
 	}
 
+	@GetMapping(value = "/pendencias", produces = "text/plain;charset=UTF-8")
+	public String pendencias(@RequestParam(required = false) Long campanhaId) {
+		return service.pendencias(campanhaId);
+	}
+
 	private static ResponseEntity<byte[]> arquivo(byte[] conteudo, String nome) {
 		ContentDisposition anexo = ContentDisposition.attachment().filename(nome).build();
 		return ResponseEntity.ok()
