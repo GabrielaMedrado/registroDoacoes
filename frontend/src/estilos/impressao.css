@@ -3,6 +3,16 @@
   display: none;
 }
 
+/*
+ * Colunas que somem no celular, mas nunca no papel. O visibleFrom do Mantine também vale na impressão
+ * (A4 em retrato tem menos de 768px), e o relatório impresso perderia a Meta.
+ */
+@media screen and (max-width: 47.99em) {
+  .oculto-no-celular {
+    display: none;
+  }
+}
+
 @media print {
   .nao-imprimir,
   .mantine-AppShell-header,

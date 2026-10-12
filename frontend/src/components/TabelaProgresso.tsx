@@ -13,7 +13,7 @@ export function TabelaProgresso({ necessidades, acoes }: Props) {
       <Table.Thead>
         <Table.Tr>
           <Table.Th>Item</Table.Th>
-          <Table.Th visibleFrom="sm">Meta</Table.Th>
+          <Table.Th className="oculto-no-celular">Meta</Table.Th>
           <Table.Th>Arrecadado</Table.Th>
           <Table.Th>Pendente</Table.Th>
         </Table.Tr>
@@ -35,7 +35,7 @@ export function TabelaProgresso({ necessidades, acoes }: Props) {
                 <BarraProgresso percentual={n.percentual} rotulo={`Progresso de ${n.item}`} />
               </Stack>
             </Table.Td>
-            <Table.Td visibleFrom="sm">{formatarQuantidade(n.quantidadeMeta, n.unidade)}</Table.Td>
+            <Table.Td className="oculto-no-celular">{formatarQuantidade(n.quantidadeMeta, n.unidade)}</Table.Td>
             <Table.Td>{formatarQuantidade(n.arrecadado, n.unidade)}</Table.Td>
             <Table.Td>
               <Text size="sm">{formatarQuantidade(n.pendente, n.unidade)}</Text>
