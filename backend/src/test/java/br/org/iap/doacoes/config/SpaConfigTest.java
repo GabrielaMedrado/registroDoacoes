@@ -1,5 +1,6 @@
 package br.org.iap.doacoes.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,12 +13,21 @@ import br.org.iap.doacoes.ApiTestSupport;
 import br.org.iap.doacoes.usuario.Papel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.servlet.resource.CachingResourceResolver;
+import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 /** O build do React fica em classpath:/static; as fixtures de teste fazem esse papel aqui. */
 class SpaConfigTest extends ApiTestSupport {
 
 	private static final String RAIZ_REACT = "id=\"root\"";
+
+	@Autowired
+	@Qualifier("resourceHandlerMapping")
+	private SimpleUrlHandlerMapping recursos;
 
 	@BeforeEach
 	void preparar() {
@@ -71,6 +81,13 @@ class SpaConfigTest extends ApiTestSupport {
 	@Test
 	void apiSemSessaoContinua401() throws Exception {
 		mvc.perform(get("/api/painel")).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void naoGuardaCadaUrlDesconhecidaEmCache() {
+		// Com cache, cada URL diferente (/x1, /x2, ...) ficaria na memória para sempre.
+		ResourceHttpRequestHandler handler = (ResourceHttpRequestHandler) recursos.getUrlMap().get("/**");
+		assertThat(handler.getResourceResolvers()).noneMatch(CachingResourceResolver.class::isInstance);
 	}
 
 	@Test

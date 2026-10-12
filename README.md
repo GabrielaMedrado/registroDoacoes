@@ -138,8 +138,8 @@ Configuração única no GitHub:
 O workflow `deploy.yml` é disparado à mão: **Actions → Deploy → Run workflow**, informando a versão já publicada (ex.: `v1.0.0`). Ele implanta primeiro em homologação. Depois de uma aprovação, faz o backup da produção e implanta a mesma versão lá. Em cada servidor, os passos são:
 
 1. copiar `docker-compose.yml` e os scripts para `~/registro-doacoes/`;
-2. só na produção, rodar `scripts/backup.sh`; se o backup falhar, o deploy para aqui;
-3. rodar `scripts/implantar.sh vX.Y.Z`, que baixa a imagem, troca o contêiner e confere com `scripts/verificar-implantacao.sh` (health, páginas, 401 da API, cookie seguro). Se a aplicação não ficar saudável em 90 s, o job falha.
+2. rodar `scripts/implantar.sh vX.Y.Z`, que baixa a imagem, troca o contêiner e confere com `scripts/verificar-implantacao.sh` (health, páginas, 401 da API, cookie seguro). Se a aplicação não ficar saudável em 90 s, o job falha;
+3. só na produção, antes da troca (`implantar.sh vX.Y.Z --backup`): subir o banco (no primeiro deploy ele ainda não existe) e rodar `scripts/backup.sh`. Se o backup falhar, o deploy para ali e a versão em uso continua no ar.
 
 Configuração única no GitHub (**Settings → Environments**):
 
@@ -154,6 +154,14 @@ Configuração única no GitHub (**Settings → Environments**):
 | `DEPLOY_KNOWN_HOSTS` | Saída de `ssh-keyscan <servidor>`. Sem ela, a conexão é recusada, para a chave nunca ir para outro servidor |
 
 Atenção: um `docker compose up -d` feito à mão no servidor, sem `APP_VERSAO`, volta para a imagem `latest`. Para fixar uma versão, use `./scripts/implantar.sh vX.Y.Z`.
+
+### Se o deploy falhar
+
+Um deploy que falha na verificação já trocou o contêiner, e a versão nova pode ficar reiniciando sem funcionar. Para voltar ao normal:
+
+1. Rode o **Deploy** de novo com a versão anterior (a que estava funcionando; veja em Releases). Ela é implantada do mesmo jeito e conferida.
+2. Se a versão nova chegou a mudar o banco (uma migration nova, por exemplo) e a anterior não sobe mais, restaure o backup feito por esse deploy. Ele é o `.dump` mais recente em `~/registro-doacoes/backups/`, e a restauração está descrita abaixo. Depois, implante a versão anterior.
+3. Para entender o erro, veja no servidor `docker compose logs app`.
 
 ## Backup e restauração
 
