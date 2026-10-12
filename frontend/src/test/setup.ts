@@ -1,10 +1,13 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
 afterEach(() => {
   cleanup()
 })
+
+// findBy* espera 1s por padrão; sob carga (suíte em paralelo, CI) a tela às vezes demora mais.
+configure({ asyncUtilTimeout: 3000 })
 
 // O Mantine usa matchMedia e ResizeObserver, que não existem no jsdom.
 Object.defineProperty(window, 'matchMedia', {

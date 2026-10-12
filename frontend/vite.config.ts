@@ -16,5 +16,8 @@ export default defineConfig({
     // Fuso fixo: testes de data não podem depender da máquina ou do CI (que roda em UTC).
     env: { TZ: 'America/Sao_Paulo' },
     css: false,
+    // Os testes de formulário simulam a digitação real (userEvent) e levam ~4s sozinhos; com a suíte em
+    // paralelo (e no CI, mais lento), 5s não bastam.
+    testTimeout: 15_000,
   },
 })
