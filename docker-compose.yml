@@ -1,12 +1,14 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: doacoes
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:?defina DB_USER no .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    # Só na própria máquina: o banco nunca fica exposto na rede do servidor.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - dados-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -14,6 +16,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  app:
+    image: ghcr.io/gabrielamedrado/registrodoacoes:${APP_VERSAO:-latest}
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/doacoes
+      DB_USER: ${DB_USER:?defina DB_USER no .env}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_SENHA: ${ADMIN_SENHA:-}
+    # O proxy HTTPS do servidor encaminha para esta porta.
+    ports:
+      - "127.0.0.1:8080:8080"
 
 volumes:
   dados-postgres:

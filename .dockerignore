@@ -1,0 +1,12 @@
+**/node_modules
+frontend/dist
+backend/target
+backend/src/main/resources/static
+.env
+.git
+backups
+.superpowers
+.claude
+postman
+docs
+*.pdf

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>br.org.iap</groupId>
 	<artifactId>doacoes</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>${revision}</version>
 	<name>doacoes</name>
 	<description/>
 	<url/>
@@ -27,6 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
+		<revision>0.0.1-SNAPSHOT</revision>
 		<java.version>25</java.version>
 		<springdoc.version>3.1.1</springdoc.version>
 	</properties>
