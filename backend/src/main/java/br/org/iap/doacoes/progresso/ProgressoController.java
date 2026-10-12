@@ -19,4 +19,9 @@ public class ProgressoController {
 	public ProgressoCampanhaResponse progresso(@PathVariable Long id) {
 		return service.daCampanha(id);
 	}
+
+	@GetMapping("/painel")
+	public PainelResponse painel() {
+		return service.painel();
+	}
 }
