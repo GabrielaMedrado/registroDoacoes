@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { listarCampanhas, type Campanha } from '../api/campanhas'
 import type { TipoDoacao } from '../api/doacoes'
 import {
@@ -201,14 +201,30 @@ function Pendencias() {
     queryFn: () => buscarPendencias(campanhaId ? Number(campanhaId) : undefined),
   })
   const ativas = campanhas.data?.itens.filter((c) => c.status === 'ATIVA')
+  const caixaDeTexto = useRef<HTMLTextAreaElement>(null)
+
+  /** Navegadores dentro de outros apps (ex.: WhatsApp) costumam negar a área de transferência moderna. */
+  function copiarSelecionando(): boolean {
+    const caixa = caixaDeTexto.current
+    if (!caixa) return false
+    caixa.select()
+    try {
+      return document.execCommand('copy')
+    } catch {
+      return false
+    }
+  }
 
   async function copiar(conteudo: string) {
+    let copiado: boolean
     try {
       await navigator.clipboard.writeText(conteudo)
-      notifications.show({ message: 'Texto copiado.' })
+      copiado = true
     } catch {
-      notifications.show({ color: 'red', message: 'Não foi possível copiar. Selecione o texto e copie.' })
+      copiado = copiarSelecionando()
     }
+    if (copiado) notifications.show({ message: 'Texto copiado.' })
+    else notifications.show({ color: 'red', message: 'Não foi possível copiar. Selecione o texto e copie.' })
   }
 
   return (
@@ -224,7 +240,14 @@ function Pendencias() {
       {texto.isError && <Alert color="red">{texto.error.message}</Alert>}
       {texto.data != null && (
         <>
-          <Textarea label="Texto para WhatsApp" value={texto.data} readOnly autosize minRows={6} />
+          <Textarea
+            ref={caixaDeTexto}
+            label="Texto para WhatsApp"
+            value={texto.data}
+            readOnly
+            autosize
+            minRows={6}
+          />
           <Group>
             <Button onClick={() => void copiar(texto.data)}>Copiar texto</Button>
             <Button
