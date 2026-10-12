@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { notifications } from '@mantine/notifications'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import * as campanhasApi from '../api/campanhas'
@@ -102,6 +103,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+  // As notificações do Mantine ficam num estado global que sobrevive ao fim do teste.
+  notifications.clean()
 })
 
 async function abrir(aba?: string) {
@@ -189,6 +192,22 @@ test('pendências: copiar texto', async () => {
   await user.click(screen.getByRole('button', { name: 'Copiar texto' }))
 
   expect(copiar).toHaveBeenCalledWith(TEXTO)
+  expect(await screen.findByText('Texto copiado.')).toBeInTheDocument()
+})
+
+test('pendências: sem permissão da área de transferência, copia selecionando o texto', async () => {
+  const user = userEvent.setup()
+  vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new DOMException('negado', 'NotAllowedError'))
+  // execCommand não existe no jsdom; o navegador embutido de outros apps (ex.: WhatsApp) ainda o aceita.
+  const execCommand = vi.fn().mockReturnValue(true)
+  Object.defineProperty(document, 'execCommand', { configurable: true, value: execCommand })
+  renderComProviders(<App />, { rota: '/relatorios' })
+  await user.click(await screen.findByRole('tab', { name: 'Pendências' }))
+  await screen.findByDisplayValue(/Ainda precisamos de/)
+
+  await user.click(screen.getByRole('button', { name: 'Copiar texto' }))
+
+  expect(execCommand).toHaveBeenCalledWith('copy')
   expect(await screen.findByText('Texto copiado.')).toBeInTheDocument()
 })
 
