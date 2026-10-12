@@ -42,6 +42,7 @@ export function NecessidadeFormModal({ campanhaId, necessidade, aberto, aoFechar
       necessidade ? atualizarNecessidade(necessidade.id, dados) : criarNecessidade(campanhaId, dados),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['necessidades', campanhaId] })
+      await queryClient.invalidateQueries({ queryKey: ['progresso', campanhaId] })
       aoFechar()
     },
     onError: (e) => {

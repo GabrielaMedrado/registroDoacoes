@@ -4,13 +4,13 @@ import {
   Anchor,
   Badge,
   Button,
+  Card,
   Center,
   Group,
   Loader,
   Menu,
   Modal,
   Stack,
-  Table,
   Text,
   Title,
 } from '@mantine/core'
@@ -21,13 +21,16 @@ import {
   alterarStatusCampanha,
   buscarCampanha,
   excluirNecessidade,
-  listarNecessidades,
   type Necessidade,
   type StatusCampanha,
 } from '../api/campanhas'
 import { ApiError } from '../api/client'
+import { listarDoacoes } from '../api/doacoes'
+import { buscarProgresso, type NecessidadeProgresso } from '../api/progresso'
 import { useAuth } from '../auth/AuthContext'
-import { COR_STATUS, formatarData, formatarMoeda, formatarQuantidade, ROTULO_STATUS } from '../util/formatos'
+import { BarraProgresso } from '../components/BarraProgresso'
+import { TabelaProgresso } from '../components/TabelaProgresso'
+import { COR_STATUS, formatarData, formatarMoeda, resumoDoacao, ROTULO_STATUS } from '../util/formatos'
 import { CampanhaFormModal } from './CampanhaFormModal'
 import { NecessidadeFormModal } from './NecessidadeFormModal'
 
@@ -42,6 +45,12 @@ const ACOES_STATUS: { status: StatusCampanha; rotulo: string; confirmacao?: stri
 ]
 
 type AcaoStatus = (typeof ACOES_STATUS)[number]
+
+/** O modal de edição usa o formato de Necessidade; o progresso traz os mesmos campos. */
+function paraNecessidade(n: NecessidadeProgresso, campanhaId: number): Necessidade {
+  const { id, item, unidade, quantidadeMeta, observacao } = n
+  return { id, campanhaId, item, unidade, quantidadeMeta, observacao }
+}
 
 type EdicaoNecessidade = { aberto: false } | { aberto: true; necessidade: Necessidade | null }
 
@@ -58,7 +67,11 @@ export function CampanhaDetalhePage() {
   const [erro, setErro] = useState<string | null>(null)
 
   const campanha = useQuery({ queryKey: ['campanha', id], queryFn: () => buscarCampanha(id) })
-  const necessidades = useQuery({ queryKey: ['necessidades', id], queryFn: () => listarNecessidades(id) })
+  const progresso = useQuery({ queryKey: ['progresso', id], queryFn: () => buscarProgresso(id) })
+  const ultimas = useQuery({
+    queryKey: ['doacoes', { campanhaId: id, pagina: 0, tamanho: 5 }],
+    queryFn: () => listarDoacoes({ campanhaId: id, pagina: 0, tamanho: 5 }),
+  })
 
   const mudarStatus = useMutation({
     mutationFn: (status: StatusCampanha) => alterarStatusCampanha(id, status),
@@ -77,7 +90,10 @@ export function CampanhaDetalhePage() {
 
   const excluir = useMutation({
     mutationFn: (n: Necessidade) => excluirNecessidade(n.id),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['necessidades', id] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['progresso', id] })
+      await queryClient.invalidateQueries({ queryKey: ['necessidades', id] })
+    },
     onError: (e) => setErro(e.message),
     onSettled: () => setExcluindo(null),
   })
@@ -159,58 +175,82 @@ export function CampanhaDetalhePage() {
         </Alert>
       )}
 
+      {progresso.data && (progresso.data.percentualGeral != null || progresso.data.totalDinheiro > 0 || c.metaValor != null) && (
+        <Stack gap="xs" mt="md">
+          {progresso.data.percentualGeral != null && (
+            <div>
+              <Text size="sm" fw={500}>
+                Progresso dos itens
+              </Text>
+              <BarraProgresso percentual={progresso.data.percentualGeral} rotulo="Progresso dos itens" />
+            </div>
+          )}
+          <div>
+            <Text size="sm" fw={500}>
+              {progresso.data.metaValor != null
+                ? `Arrecadado em dinheiro: ${formatarMoeda(progresso.data.totalDinheiro)} de ${formatarMoeda(progresso.data.metaValor)}`
+                : `Arrecadado em dinheiro: ${formatarMoeda(progresso.data.totalDinheiro)}`}
+            </Text>
+            {progresso.data.percentualValor != null && (
+              <BarraProgresso percentual={progresso.data.percentualValor} rotulo="Arrecadação em dinheiro" />
+            )}
+          </div>
+        </Stack>
+      )}
+
       <Group justify="space-between" mt="md">
         <Title order={3}>Necessidades</Title>
         {admin && <Button onClick={() => setEdicao({ aberto: true, necessidade: null })}>Adicionar necessidade</Button>}
       </Group>
 
-      {necessidades.isPending && <Loader size="sm" />}
-      {necessidades.data?.length === 0 && <Text c="dimmed">Nenhuma necessidade cadastrada.</Text>}
-      {necessidades.data && necessidades.data.length > 0 && (
-        <Table striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Item</Table.Th>
-              <Table.Th>Meta</Table.Th>
-              <Table.Th visibleFrom="sm">Observação</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {necessidades.data.map((n) => (
-              <Table.Tr key={n.id}>
-                <Table.Td>
-                  {/* Ações ao lado do nome: no celular ficam sempre visíveis, sem arrastar a tabela. */}
-                  <Group gap={4} wrap="nowrap">
-                    {admin && (
-                      <Menu position="bottom-start">
-                        <Menu.Target>
-                          <ActionIcon variant="subtle" color="gray" aria-label={`Ações de ${n.item}`}>
-                            ⋮
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item onClick={() => setEdicao({ aberto: true, necessidade: n })}>Editar</Menu.Item>
-                          <Menu.Item onClick={() => setExcluindo(n)}>
-                            Excluir
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    )}
-                    <Text size="sm">{n.item}</Text>
-                  </Group>
-                  {n.observacao && (
-                    <Text size="xs" c="dimmed" hiddenFrom="sm">
-                      {n.observacao}
-                    </Text>
-                  )}
-                </Table.Td>
-                <Table.Td>{formatarQuantidade(n.quantidadeMeta, n.unidade)}</Table.Td>
-                <Table.Td visibleFrom="sm">{n.observacao}</Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+      {progresso.isPending && <Loader size="sm" />}
+      {progresso.isError && <Alert color="red">{progresso.error.message}</Alert>}
+      {progresso.data?.necessidades.length === 0 && <Text c="dimmed">Nenhuma necessidade cadastrada.</Text>}
+      {progresso.data && progresso.data.necessidades.length > 0 && (
+        <TabelaProgresso
+          necessidades={progresso.data.necessidades}
+          // Ações ao lado do nome: no celular ficam sempre visíveis, sem arrastar a tabela.
+          acoes={
+            admin
+              ? (n) => (
+                  <Menu position="bottom-start">
+                    <Menu.Target>
+                      <ActionIcon variant="subtle" color="gray" aria-label={`Ações de ${n.item}`}>
+                        ⋮
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item onClick={() => setEdicao({ aberto: true, necessidade: paraNecessidade(n, id) })}>
+                        Editar
+                      </Menu.Item>
+                      <Menu.Item onClick={() => setExcluindo(paraNecessidade(n, id))}>Excluir</Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                )
+              : undefined
+          }
+        />
       )}
+
+      <Stack gap="xs" mt="md">
+        <Title order={3}>Últimas doações</Title>
+        {ultimas.isPending && <Loader size="sm" />}
+        {ultimas.isError && <Alert color="red">{ultimas.error.message}</Alert>}
+        {ultimas.data?.itens.length === 0 && <Text c="dimmed">Nenhuma doação registrada.</Text>}
+        {ultimas.data?.itens.map((d) => (
+          <Card key={d.id} withBorder radius="md" padding="sm">
+            <Group justify="space-between" wrap="nowrap" align="flex-start">
+              <Text size="sm" fw={500}>
+                {d.doadorNome ?? 'Anônimo'}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {formatarData(d.dataDoacao)}
+              </Text>
+            </Group>
+            <Text size="sm">{resumoDoacao(d)}</Text>
+          </Card>
+        ))}
+      </Stack>
 
       {editandoCampanha && <CampanhaFormModal aberto campanha={c} aoFechar={() => setEditandoCampanha(false)} />}
       {edicao.aberto && (

@@ -7,6 +7,7 @@ import { ApiError } from '../api/client'
 import * as doacoesApi from '../api/doacoes'
 import type { Doacao } from '../api/doacoes'
 import * as doadoresApi from '../api/doadores'
+import * as progressoApi from '../api/progresso'
 import App from '../App'
 import { MARIA } from '../test/fixtures'
 import { prepararAuth, VOLUNTARIO } from '../test/mockAuth'
@@ -17,6 +18,7 @@ vi.mock('../api/auth', async () => (await import('../test/mockAuth')).authMock)
 vi.mock('../api/campanhas')
 vi.mock('../api/doacoes')
 vi.mock('../api/doadores')
+vi.mock('../api/progresso')
 
 const campanha = (id: number, titulo: string): Campanha => ({
   id,
@@ -152,6 +154,18 @@ test('após registrar mostra sucesso e limpa itens mantendo a campanha', async (
   expect(screen.getByRole('combobox', { name: 'Campanha' })).toHaveValue('Cesta básica')
   expect(screen.getByRole('combobox', { name: 'Item 1' })).toHaveValue('')
   expect(screen.queryByRole('combobox', { name: 'Item 2' })).not.toBeInTheDocument()
+})
+
+test('registrar doação atualiza progresso, painel e relatórios', async () => {
+  await abrir()
+
+  await escolher('Campanha', 'Cesta básica')
+  await escolher('Item 1', 'Arroz')
+  await userEvent.type(screen.getByLabelText('Quantidade 1'), '5')
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar' }))
+
+  await screen.findByText('Doação registrada.')
+  expect(vi.mocked(progressoApi).invalidarTotais).toHaveBeenCalled()
 })
 
 test('trocar a campanha limpa os itens escolhidos', async () => {

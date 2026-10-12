@@ -5,6 +5,7 @@ import * as campanhasApi from '../api/campanhas'
 import { ApiError } from '../api/client'
 import * as doacoesApi from '../api/doacoes'
 import type { Doacao } from '../api/doacoes'
+import * as progressoApi from '../api/progresso'
 import App from '../App'
 import { prepararAuth, VOLUNTARIO } from '../test/mockAuth'
 import { renderComProviders } from '../test/render'
@@ -13,6 +14,7 @@ vi.mock('../api/auth', async () => (await import('../test/mockAuth')).authMock)
 vi.mock('../api/campanhas')
 vi.mock('../api/doacoes')
 vi.mock('../api/doadores')
+vi.mock('../api/progresso')
 
 const DOACAO: Doacao = {
   id: 50,
@@ -111,6 +113,15 @@ test('excluir pede confirmação e chama a API', async () => {
 
   await waitFor(() => expect(doacoes.excluirDoacao).toHaveBeenCalledWith(50))
   await waitFor(() => expect(doacoes.listarDoacoes).toHaveBeenCalledTimes(2))
+})
+
+test('excluir doação atualiza progresso, painel e relatórios', async () => {
+  await abrir()
+
+  await escolherAcao('Excluir')
+  await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Excluir' }))
+
+  await waitFor(() => expect(vi.mocked(progressoApi).invalidarTotais).toHaveBeenCalled())
 })
 
 test('403 ao excluir mostra a mensagem da API', async () => {
