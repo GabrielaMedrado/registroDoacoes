@@ -2,8 +2,16 @@ name: CI
 
 on:
   push:
+    # Tags são verificadas pela release (release.yml chama este workflow).
+    branches: ["**"]
   pull_request:
     branches: [main]
+  workflow_call:
+    inputs:
+      versao:
+        description: Versão do build (sem o v), usada pela release
+        type: string
+        default: ""
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -25,7 +33,9 @@ jobs:
           cache: maven
 
       - name: Testes, Checkstyle e cobertura
-        run: ./mvnw -B verify
+        env:
+          VERSAO: ${{ inputs.versao }}
+        run: ./mvnw -B verify ${VERSAO:+-Drevision=$VERSAO}
 
       - name: Relatórios de teste e cobertura
         if: always()
@@ -35,6 +45,13 @@ jobs:
           path: |
             backend/target/surefire-reports
             backend/target/site/jacoco
+
+      - name: Especificação OpenAPI
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: backend/target/openapi.json
+          if-no-files-found: error
 
   frontend:
     runs-on: ubuntu-latest
