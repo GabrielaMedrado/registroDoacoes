@@ -3,3 +3,8 @@ spring:
     import: optional:file:../.env[.properties]
   jpa:
     show-sql: true
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui

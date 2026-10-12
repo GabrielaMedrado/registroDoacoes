@@ -4,6 +4,7 @@ import br.org.iap.doacoes.auth.UsuarioAutenticado;
 import br.org.iap.doacoes.comum.PaginaResponse;
 import br.org.iap.doacoes.doacao.DoacaoResponse;
 import br.org.iap.doacoes.doacao.DoacaoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Doadores")
 @RequestMapping("/api/doadores")
 public class DoadorController {
 

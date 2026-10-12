@@ -3,3 +3,7 @@ server:
     session:
       cookie:
         secure: true
+
+springdoc:
+  api-docs:
+    enabled: false

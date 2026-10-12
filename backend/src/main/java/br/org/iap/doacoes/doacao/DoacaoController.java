@@ -2,6 +2,7 @@ package br.org.iap.doacoes.doacao;
 
 import br.org.iap.doacoes.auth.UsuarioAutenticado;
 import br.org.iap.doacoes.comum.PaginaResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Doações")
 @RequestMapping("/api/doacoes")
 public class DoacaoController {
 
