@@ -1,5 +1,6 @@
 package br.org.iap.doacoes.campanha;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Necessidades")
 @RequestMapping("/api")
 public class NecessidadeController {
 

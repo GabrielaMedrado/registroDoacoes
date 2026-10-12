@@ -2,6 +2,7 @@ package br.org.iap.doacoes.auth;
 
 import br.org.iap.doacoes.comum.GlobalExceptionHandler;
 import br.org.iap.doacoes.usuario.Usuario;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Autenticação")
 @RequestMapping("/api/auth")
 public class AuthController {
 

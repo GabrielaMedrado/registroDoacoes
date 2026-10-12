@@ -1,11 +1,13 @@
 package br.org.iap.doacoes.progresso;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Progresso e painel")
 @RequestMapping("/api")
 public class ProgressoController {
 

@@ -2,6 +2,7 @@ package br.org.iap.doacoes.relatorio;
 
 import br.org.iap.doacoes.auth.UsuarioAutenticado;
 import br.org.iap.doacoes.doacao.TipoDoacao;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import org.springframework.http.ContentDisposition;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Tag(name = "Relatórios")
 @RequestMapping("/api/relatorios")
 public class RelatorioController {
 

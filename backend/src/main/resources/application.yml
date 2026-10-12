@@ -28,3 +28,7 @@ app:
   admin-inicial:
     email: ${ADMIN_EMAIL:}
     senha: ${ADMIN_SENHA:}
+
+springdoc:
+  swagger-ui:
+    enabled: false
