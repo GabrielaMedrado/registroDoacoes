@@ -6,3 +6,4 @@ frontend/dist/
 .idea/
 *.iml
 .vscode/
+backend/src/main/resources/static/
