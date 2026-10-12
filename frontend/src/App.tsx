@@ -11,6 +11,7 @@ import { DoacaoFormPage } from './pages/DoacaoFormPage'
 import { DoacoesPage } from './pages/DoacoesPage'
 import { DoadorDetalhePage } from './pages/DoadorDetalhePage'
 import { DoadoresPage } from './pages/DoadoresPage'
+import { PainelPage } from './pages/PainelPage'
 import { MinhaContaPage } from './pages/MinhaContaPage'
 import { UsuariosPage } from './pages/UsuariosPage'
 
@@ -21,7 +22,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RotaProtegida />}>
           <Route element={<AppShellLayout />}>
-            <Route index element={<EmConstrucaoPage titulo="Painel" />} />
+            <Route index element={<PainelPage />} />
             <Route path="campanhas" element={<CampanhasPage />} />
             <Route path="campanhas/:id" element={<CampanhaDetalhePage />} />
             <Route path="doacoes" element={<DoacoesPage />} />
