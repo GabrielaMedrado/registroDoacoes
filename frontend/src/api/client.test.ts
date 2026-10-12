@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { api, ApiError, definirAoNaoAutenticado } from './client'
+import { api, ApiError, apiTexto, definirAoNaoAutenticado } from './client'
 
 const fetchMock = vi.fn()
 
@@ -108,4 +108,18 @@ test('204 resolve undefined', async () => {
   fetchMock.mockResolvedValue(new Response(null, { status: 204 }))
 
   await expect(api('/api/auth/logout', { method: 'POST' })).resolves.toBeUndefined()
+})
+
+test('apiTexto devolve o corpo como texto e trata 401 como api', async () => {
+  fetchMock.mockResolvedValueOnce(new Response('*Agasalho*\n• Arroz: 5 kg', { status: 200 }))
+
+  expect(await apiTexto('/api/relatorios/pendencias')).toBe('*Agasalho*\n• Arroz: 5 kg')
+  expect(fetchMock.mock.calls[0][1].headers.Accept).toBe('text/plain')
+
+  const aoExpirar = vi.fn()
+  definirAoNaoAutenticado(aoExpirar)
+  fetchMock.mockResolvedValueOnce(resposta(401))
+
+  await expect(apiTexto('/api/relatorios/pendencias')).rejects.toBeInstanceOf(ApiError)
+  expect(aoExpirar).toHaveBeenCalled()
 })

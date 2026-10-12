@@ -47,9 +47,14 @@ async function lerProblema(resposta: Response): Promise<ProblemDetail | undefine
   }
 }
 
-export async function api<T>(caminho: string, opcoes?: { method?: Metodo; body?: unknown }): Promise<T> {
+/** Faz a requisição com sessão e CSRF; lança ApiError (e avisa sessão expirada) se a resposta não for ok. */
+async function requisitar(
+  caminho: string,
+  accept: string,
+  opcoes?: { method?: Metodo; body?: unknown },
+): Promise<Response> {
   const method = opcoes?.method ?? 'GET'
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers: Record<string, string> = { Accept: accept }
   if (opcoes?.body !== undefined) {
     headers['Content-Type'] = 'application/json'
   }
@@ -73,9 +78,19 @@ export async function api<T>(caminho: string, opcoes?: { method?: Metodo; body?:
     }
     throw new ApiError(resposta.status, await lerProblema(resposta))
   }
+  return resposta
+}
+
+export async function api<T>(caminho: string, opcoes?: { method?: Metodo; body?: unknown }): Promise<T> {
+  const resposta = await requisitar(caminho, 'application/json', opcoes)
   if (resposta.status === 204) {
     return undefined as T
   }
   const texto = await resposta.text()
   return (texto ? JSON.parse(texto) : undefined) as T
+}
+
+/** GET de conteúdo em texto puro (ex.: texto de pendências para WhatsApp). */
+export async function apiTexto(caminho: string): Promise<string> {
+  return (await requisitar(caminho, 'text/plain')).text()
 }
