@@ -32,5 +32,14 @@ jobs_com_permissoes_proprias_leem_o_repositorio() {
 	done
 }
 
+release_anexa_a_documentacao_sem_github_pages() {
+	# O repositório é privado e o Pages não é publicado: a documentação vai como anexo da Release.
+	local wf="$RAIZ/.github/workflows/release.yml"
+	afirmar_nao_contem "$(cat "$wf")" "deploy-pages"
+	afirmar_nao_contem "$(cat "$wf")" "pages: write"
+	afirmar_contem "$(grep 'gh release create' "$wf")" "openapi.json"
+	afirmar_contem "$(grep 'gh release create' "$wf")" "javadoc-"
+}
+
 rodar_testes cada_workflow_declara_permissoes_no_topo cada_job_com_runs_on_tem_timeout \
-	jobs_com_permissoes_proprias_leem_o_repositorio
+	jobs_com_permissoes_proprias_leem_o_repositorio release_anexa_a_documentacao_sem_github_pages

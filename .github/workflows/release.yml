@@ -82,17 +82,12 @@ jobs:
       - name: Publicação no GHCR
         run: docker push --all-tags "ghcr.io/${GITHUB_REPOSITORY,,}"
 
-  pages:
-    needs: verificar
+  # O repositório é privado e o GitHub Pages não é publicado: a especificação OpenAPI e o Javadoc
+  # vão como anexos da Release (visíveis para quem tem acesso ao repositório).
+  documentacao:
+    needs: [preparar, verificar]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.publicar.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -102,31 +97,22 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: openapi
-          path: openapi
-
       - name: Javadoc
         working-directory: backend
-        run: ./mvnw -B -q javadoc:javadoc -Ddoclint=none -Dcheckstyle.skip
+        env:
+          VERSAO: ${{ needs.preparar.outputs.versao }}
+        run: ./mvnw -B -q javadoc:javadoc -Ddoclint=none -Dcheckstyle.skip -Drevision="$VERSAO"
 
-      - name: Montagem do site
-        run: |
-          mkdir -p site
-          cp -r docs/pages/. site/
-          cp openapi/openapi.json site/api/openapi.json
-          cp -r backend/target/reports/apidocs site/javadoc
+      - name: Compactação do Javadoc
+        run: cd backend/target/reports/apidocs && zip -q -r "$GITHUB_WORKSPACE/javadoc-$GITHUB_REF_NAME.zip" .
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          path: site
-
-      - id: publicar
-        uses: actions/deploy-pages@v4
+          name: javadoc
+          path: javadoc-${{ github.ref_name }}.zip
 
   publicar:
-    needs: imagem
+    needs: [imagem, documentacao]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -136,9 +122,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: GitHub Release com o changelog
+      - uses: actions/download-artifact@v4
+        with:
+          name: openapi
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: javadoc
+
+      - name: GitHub Release com o changelog e a documentação
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash scripts/changelog.sh "$GITHUB_REF_NAME" > notas.md
-          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notas.md
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notas.md openapi.json "javadoc-$GITHUB_REF_NAME.zip"
