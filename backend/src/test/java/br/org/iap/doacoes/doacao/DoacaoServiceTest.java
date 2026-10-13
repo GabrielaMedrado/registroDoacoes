@@ -75,6 +75,7 @@ class DoacaoServiceTest {
 	@BeforeEach
 	void preparar() {
 		when(campanhas.obter(1L)).thenReturn(campanha1);
+		when(campanhaRepo.findAllById(anyIterable())).thenReturn(List.of(campanha1));
 		List<Necessidade> todas = List.of(
 				comId(new Necessidade(1L, "Arroz", Unidade.KG, new BigDecimal("50"), null), 10L),
 				comId(new Necessidade(1L, "Feijão", Unidade.KG, new BigDecimal("30"), null), 11L),
