@@ -20,4 +20,17 @@ cada_job_com_runs_on_tem_timeout() {
 	done
 }
 
-rodar_testes cada_workflow_declara_permissoes_no_topo cada_job_com_runs_on_tem_timeout
+jobs_com_permissoes_proprias_leem_o_repositorio() {
+	# Permissões no job substituem as do topo: sem contents, o checkout falha em repositório privado.
+	local wf faltando
+	for wf in "$RAIZ"/.github/workflows/*.yml; do
+		faltando=$(awk '/^  [a-z-]+:$/ { job = $1 }
+			/^    permissions:/ { dentro = 1; tem = 0; next }
+			dentro && /^      contents:/ { tem = 1 }
+			dentro && !/^      / { if (!tem) print job; dentro = 0 }' "$wf")
+		[[ -z "$faltando" ]] || falhar "$(basename "$wf"): sem contents nas permissões de $faltando"
+	done
+}
+
+rodar_testes cada_workflow_declara_permissoes_no_topo cada_job_com_runs_on_tem_timeout \
+	jobs_com_permissoes_proprias_leem_o_repositorio
