@@ -24,6 +24,7 @@ const DOACAO: Doacao = {
   observacao: null,
   registradoPorNome: 'Vitor',
   itens: [{ necessidadeId: 10, item: 'Arroz', unidade: 'KG', quantidade: 5 }],
+  campanhaAtiva: true,
   podeAlterar: true,
 }
 

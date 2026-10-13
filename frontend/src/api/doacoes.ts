@@ -21,6 +21,7 @@ export type Doacao = {
   observacao: string | null
   registradoPorNome: string
   itens: ItemDoacao[]
+  campanhaAtiva: boolean
   podeAlterar: boolean
 }
 

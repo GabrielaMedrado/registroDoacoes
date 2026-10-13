@@ -138,6 +138,7 @@ export function DoacaoFormPage() {
   if (doacao.isError || !doacao.data.podeAlterar) {
     const naoEncontrada = doacao.error instanceof ApiError && doacao.error.status === 404
     let mensagem = 'Você só pode alterar doações que você registrou.'
+    if (doacao.isSuccess && !doacao.data.campanhaAtiva) mensagem = 'Só é possível alterar doações de campanhas ativas.'
     if (doacao.isError) mensagem = naoEncontrada ? 'Doação não encontrada.' : doacao.error.message
     return (
       <Stack>
