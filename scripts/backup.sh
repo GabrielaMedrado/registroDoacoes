@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # Backup do banco (pg_dump, formato custom) em backups/doacoes-AAAAMMDD-HHMMSS.dump.
 # Roda da pasta do projeto, com o Compose no ar. Restauração: ver README.
-# BACKUP_DIR: pasta dos arquivos (padrão backups). BACKUP_MANTER: quantos manter (padrão 30).
+# BACKUP_DIR: pasta dos arquivos (padrão backups). BACKUP_MANTER: quantos manter (padrão 30; inteiro maior que zero).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 pasta="${BACKUP_DIR:-backups}"
 manter="${BACKUP_MANTER:-30}"
+if [[ ! "$manter" =~ ^[1-9][0-9]*$ ]]; then
+	echo "BACKUP_MANTER inválido: $manter. Use um número inteiro maior que zero." >&2
+	exit 2
+fi
 mkdir -p "$pasta"
 
 arquivo="$pasta/doacoes-$(TZ=America/Sao_Paulo date +%Y%m%d-%H%M%S).dump"
