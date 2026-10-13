@@ -570,7 +570,7 @@ test('lança ApiError com problem e erros de campo', async () => {
   // rejects ApiError com status 400 e problem.erros[0].campo === 'email'
 });
 test('401 fora de /api/auth chama o callback de não autenticado', async () => {});
-test('401 em /api/auth/* não chama o callback', async () => {});
+test('401 em /api/auth/login, /me ou /logout não chama o callback (401 em /api/auth/minha-senha chama: sessão expirada)', async () => {});
 test('204 resolve undefined', async () => {});
 test('usuarioAtual devolve null em 401', async () => {});
 ```

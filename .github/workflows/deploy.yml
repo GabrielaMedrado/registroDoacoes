@@ -1,0 +1,70 @@
+name: Deploy
+
+# Manual até a hospedagem ser definida: Actions → Deploy → Run workflow → versão publicada.
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: "Tag publicada pela release, ex.: v1.0.0"
+        required: true
+        type: string
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  homologacao:
+    runs-on: ubuntu-latest
+    environment: homologacao
+    steps:
+      - name: Validação da versão
+        env:
+          VERSAO: ${{ inputs.versao }}
+        run: |
+          if [[ ! "$VERSAO" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Versão inválida: $VERSAO. Use o formato vX.Y.Z." >&2
+            exit 2
+          fi
+
+      # Compose e scripts levados ao servidor são os da própria versão.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.versao }}
+
+      - uses: ./.github/actions/implantar
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          usuario: ${{ secrets.DEPLOY_USER }}
+          chave: ${{ secrets.DEPLOY_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          versao: ${{ inputs.versao }}
+          backup: "false"
+
+  producao:
+    needs: homologacao
+    runs-on: ubuntu-latest
+    # Aprovação obrigatória configurada no Environment (Settings → Environments → production).
+    environment: production
+    steps:
+      - name: Validação da versão
+        env:
+          VERSAO: ${{ inputs.versao }}
+        run: |
+          if [[ ! "$VERSAO" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Versão inválida: $VERSAO. Use o formato vX.Y.Z." >&2
+            exit 2
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.versao }}
+
+      - uses: ./.github/actions/implantar
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          usuario: ${{ secrets.DEPLOY_USER }}
+          chave: ${{ secrets.DEPLOY_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          versao: ${{ inputs.versao }}
+          backup: "true"
