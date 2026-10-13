@@ -1,4 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act } from '@testing-library/react'
+import { focusManager } from '@tanstack/react-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
 import * as campanhasApi from '../api/campanhas'
@@ -266,6 +268,40 @@ test('editar envia a versão carregada', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
 
   await waitFor(() => expect(doacoes.atualizarDoacao).toHaveBeenCalledWith(50, expect.objectContaining({ versao: 4 })))
+})
+
+test('recarga em segundo plano não troca a versão dos valores na tela', async () => {
+  doacoes.buscarDoacao.mockResolvedValue({ ...DOACAO, versao: 0 })
+  await abrir('/doacoes/50/editar')
+  expect(await screen.findByLabelText('Quantidade 1')).toHaveValue('5')
+
+  // Outra pessoa salvou: a próxima leitura traz a versão 1 com outra quantidade.
+  doacoes.buscarDoacao.mockResolvedValue({ ...DOACAO, versao: 1, itens: [{ ...DOACAO.itens[0], quantidade: 9 }] })
+  act(() => {
+    focusManager.setFocused(false)
+    focusManager.setFocused(true)
+  })
+  await waitFor(() => expect(doacoes.buscarDoacao).toHaveBeenCalledTimes(2))
+
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+  // A tela ainda mostra os valores da versão 0: é ela que vai, para o servidor recusar com 409.
+  await waitFor(() => expect(doacoes.atualizarDoacao).toHaveBeenCalledWith(50, expect.objectContaining({ versao: 0 })))
+})
+
+test('reabrir a edição pelo app mostra os dados atuais, não a cópia antiga', async () => {
+  doacoes.listarDoacoes.mockResolvedValue({ itens: [DOACAO], pagina: 0, tamanho: 20, total: 1, totalPaginas: 1 })
+  doacoes.buscarDoacao.mockResolvedValue({ ...DOACAO, versao: 0 })
+  await abrir('/doacoes/50/editar')
+  expect(await screen.findByLabelText('Quantidade 1')).toHaveValue('5')
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+  await screen.findByRole('button', { name: /Ações da doação/ })
+
+  // Enquanto isso, outra pessoa salvou a versão 1.
+  doacoes.buscarDoacao.mockResolvedValue({ ...DOACAO, versao: 1, itens: [{ ...DOACAO.itens[0], quantidade: 9 }] })
+  await userEvent.click(screen.getByRole('button', { name: /Ações da doação/ }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Editar', hidden: true }))
+
+  expect(await screen.findByLabelText('Quantidade 1')).toHaveValue('9')
 })
 
 test('cadastrar novo doador no seletor já o seleciona', async () => {

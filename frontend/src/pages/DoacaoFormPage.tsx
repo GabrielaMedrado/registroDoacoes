@@ -123,7 +123,13 @@ function valoresIniciais(doacao: Doacao | null, campanhaDaUrl: string | null): V
 export function DoacaoFormPage() {
   const params = useParams()
   const id = params.id ? Number(params.id) : null
-  const doacao = useQuery({ queryKey: ['doacao', id], queryFn: () => buscarDoacao(id as number), enabled: id != null })
+  // gcTime 0: reabrir a edição nunca monta o formulário com uma cópia antiga do cache.
+  const doacao = useQuery({
+    queryKey: ['doacao', id],
+    queryFn: () => buscarDoacao(id as number),
+    enabled: id != null,
+    gcTime: 0,
+  })
 
   if (id == null) {
     return <FormularioDoacao doacao={null} />
@@ -158,6 +164,9 @@ function FormularioDoacao({ doacao }: { doacao: Doacao | null }) {
   const queryClient = useQueryClient()
   const [erroGeral, setErroGeral] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
+  // A versão fica presa aos valores do formulário: uma recarga em segundo plano não pode trocá-la, senão o
+  // servidor aceitaria valores antigos com a versão nova (e apagaria a alteração de outra pessoa sem 409).
+  const [versaoLida] = useState(doacao?.versao)
   // Trava contra toque duplo: o botão só fica "carregando" depois do próximo render.
   const enviando = useRef(false)
 
@@ -187,7 +196,7 @@ function FormularioDoacao({ doacao }: { doacao: Doacao | null }) {
 
   const salvar = useMutation({
     mutationFn: (dados: DoacaoDados) =>
-      doacao ? atualizarDoacao(doacao.id, { ...dados, versao: doacao.versao }) : registrarDoacao(dados),
+      doacao ? atualizarDoacao(doacao.id, { ...dados, versao: versaoLida }) : registrarDoacao(dados),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['doacoes'] })
       await queryClient.invalidateQueries({ queryKey: ['doador'] })
