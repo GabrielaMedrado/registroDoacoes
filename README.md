@@ -6,7 +6,7 @@ Projeto Integrador de Tecnologia da Informação III — UFMS Digital (2026.2).
 
 - Especificação: [docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md](docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md)
 - Planos de implementação: [docs/superpowers/plans/](docs/superpowers/plans/)
-- Documentação da API publicada: https://gabrielamedrado.github.io/registroDoacoes/
+- Documentação da API: anexada a cada [Release](https://github.com/GabrielaMedrado/registroDoacoes/releases) (`openapi.json` e `javadoc-vX.Y.Z.zip`); localmente, no perfil `dev`, em http://localhost:8080/swagger-ui
 
 ## Pré-requisitos
 
@@ -102,14 +102,12 @@ O workflow `release.yml` então:
 1. repete todas as verificações do CI;
 2. constrói a imagem, sobe ela com um banco de teste e confere que está saudável;
 3. publica `ghcr.io/gabrielamedrado/registrodoacoes` com as tags `v1.0.0` e `latest`;
-4. cria a Release no GitHub com o changelog (Novidades, Correções e Outras mudanças, a partir dos commits);
-5. publica no GitHub Pages a especificação OpenAPI e o Javadoc.
+4. gera o Javadoc;
+5. cria a Release no GitHub com o changelog (Novidades, Correções e Outras mudanças, a partir dos commits) e anexa a especificação OpenAPI (`openapi.json`) e o Javadoc (`javadoc-vX.Y.Z.zip`).
 
-Configuração única no GitHub:
+O repositório é privado e o GitHub Pages não é usado: a documentação fica nos anexos de cada Release, visível para quem tem acesso ao repositório. Para ler o Javadoc, descompacte o `.zip` e abra o `index.html`; o `openapi.json` abre no [Swagger Editor](https://editor.swagger.io/) ou no Postman (Import).
 
-- **Settings → Pages → Source:** "GitHub Actions".
-- **Settings → Environments → github-pages → Deployment branches and tags:** acrescente a regra de tag `v*` (por padrão só a branch principal pode publicar).
-- **Pacote no GHCR:** depois da primeira release, em Packages → registrodoacoes → Package settings, deixe-o público. Outra opção é fazer, no servidor, `docker login ghcr.io` com um token que tenha só `read:packages`.
+Para o servidor baixar a imagem (o pacote no GHCR é privado como o repositório), faça nele uma vez `docker login ghcr.io` com um token que tenha só `read:packages`.
 
 ## Preparar o servidor
 
@@ -204,7 +202,7 @@ frontend/           React + TypeScript (Vite, Mantine)
 scripts/            backup, implantação, verificação e changelog (testes em scripts/testes/)
 postman/            Coleção Postman da API
 config/             Regras do Checkstyle
-docs/               Especificação e planos; docs/pages/ é o site do GitHub Pages
+docs/               Especificação e planos de implementação
 .github/workflows/  ci.yml, release.yml, deploy.yml
 Dockerfile          node (build do React) → maven (JAR com o React) → JRE 25, sem root
 ```
