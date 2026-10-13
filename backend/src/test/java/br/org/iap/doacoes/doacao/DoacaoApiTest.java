@@ -10,11 +10,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import br.org.iap.doacoes.ApiTestSupport;
 import br.org.iap.doacoes.usuario.Papel;
 import com.jayway.jsonpath.JsonPath;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -25,10 +27,14 @@ class DoacaoApiTest extends ApiTestSupport {
 	protected long campanhaId;
 	protected long arrozId;
 	protected long feijaoId;
-	protected final String hoje = LocalDate.now().toString();
+	// Mesmo relógio da aplicação (fuso de Brasília): no CI em UTC, "hoje" da máquina pode já ser amanhã.
+	@Autowired
+	private Clock clock;
+	protected String hoje;
 
 	@BeforeEach
 	void preparar() throws Exception {
+		hoje = LocalDate.now(clock).toString();
 		limparBanco();
 		criarUsuario("Ana", "ana@igreja.org", Papel.ADMIN);
 		criarUsuario("Vitor", "vitor@igreja.org", Papel.VOLUNTARIO);
@@ -128,7 +134,7 @@ class DoacaoApiTest extends ApiTestSupport {
 	}
 
 	private String diasAtras(int dias) {
-		return LocalDate.now().minusDays(dias).toString();
+		return LocalDate.now(clock).minusDays(dias).toString();
 	}
 
 	@Test
