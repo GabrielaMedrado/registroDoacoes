@@ -186,7 +186,8 @@ function FormularioDoacao({ doacao }: { doacao: Doacao | null }) {
   }
 
   const salvar = useMutation({
-    mutationFn: (dados: DoacaoDados) => (doacao ? atualizarDoacao(doacao.id, dados) : registrarDoacao(dados)),
+    mutationFn: (dados: DoacaoDados) =>
+      doacao ? atualizarDoacao(doacao.id, { ...dados, versao: doacao.versao }) : registrarDoacao(dados),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['doacoes'] })
       await queryClient.invalidateQueries({ queryKey: ['doador'] })

@@ -23,6 +23,7 @@ export type Doacao = {
   itens: ItemDoacao[]
   campanhaAtiva: boolean
   podeAlterar: boolean
+  versao: number
 }
 
 export type DoacaoDados = {
@@ -34,6 +35,8 @@ export type DoacaoDados = {
   dataDoacao: string
   observacao: string | null
   itens: { necessidadeId: number; quantidade: number }[]
+  // Só na edição: a versão lida; se outra pessoa salvou antes, a API responde 409.
+  versao?: number
 }
 
 export type FiltroDoacoes = {

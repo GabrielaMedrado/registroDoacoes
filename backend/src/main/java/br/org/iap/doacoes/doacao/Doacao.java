@@ -12,6 +12,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -57,6 +58,12 @@ public class Doacao {
 	@OrderBy("id")
 	private List<ItemDoacao> itens = new ArrayList<>();
 
+	@Column(name = "atualizado_em", nullable = false)
+	private OffsetDateTime atualizadoEm;
+
+	@Version
+	private Long versao;
+
 	protected Doacao() {
 	}
 
@@ -76,6 +83,8 @@ public class Doacao {
 		this.formaPagamento = formaPagamento;
 		this.dataDoacao = dataDoacao;
 		this.observacao = observacao;
+		// Sempre muda: assim o Hibernate aumenta a versão mesmo quando só os itens (outra tabela) mudaram.
+		this.atualizadoEm = OffsetDateTime.now();
 	}
 
 	public void substituirItens(List<ItemDoacao> novos) {
@@ -89,6 +98,10 @@ public class Doacao {
 	@PrePersist
 	void aoCriar() {
 		criadoEm = OffsetDateTime.now();
+	}
+
+	public Long getVersao() {
+		return versao;
 	}
 
 	public Long getId() {
