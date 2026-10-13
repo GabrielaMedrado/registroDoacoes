@@ -52,6 +52,7 @@ const DOACAO: Doacao = {
   observacao: null,
   registradoPorNome: 'Vitor',
   itens: [{ necessidadeId: 10, item: 'Arroz', unidade: 'KG', quantidade: 5 }],
+  campanhaAtiva: true,
   podeAlterar: true,
 }
 
@@ -244,6 +245,15 @@ test('editar carrega a doação e salva com atualizarDoacao', async () => {
       itens: [{ necessidadeId: 10, quantidade: 7 }],
     }),
   )
+})
+
+test('doação de campanha não ativa mostra aviso em vez do formulário', async () => {
+  doacoes.buscarDoacao.mockResolvedValue({ ...DOACAO, campanhaAtiva: false, podeAlterar: false })
+  renderComProviders(<App />, { rota: '/doacoes/50/editar' })
+
+  expect(await screen.findByText('Só é possível alterar doações de campanhas ativas.')).toBeInTheDocument()
+  expect(screen.queryByText('Você só pode alterar doações que você registrou.')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Salvar alterações' })).not.toBeInTheDocument()
 })
 
 test('cadastrar novo doador no seletor já o seleciona', async () => {

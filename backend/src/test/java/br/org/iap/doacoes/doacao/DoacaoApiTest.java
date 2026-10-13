@@ -178,6 +178,19 @@ class DoacaoApiTest extends ApiTestSupport {
 	}
 
 	@Test
+	void doacaoDeCampanhaEncerradaNaoPodeSerAlterada() throws Exception {
+		long doacao = id(registrar(admin, doacaoDeItens(campanhaId, hoje, arrozId, "2")));
+		mudarStatus(campanhaId, "ENCERRADA");
+		consultar("/api/doacoes/" + doacao, admin)
+				.andExpect(jsonPath("$.campanhaAtiva").value(false))
+				.andExpect(jsonPath("$.podeAlterar").value(false));
+		mudarStatus(campanhaId, "ATIVA");
+		consultar("/api/doacoes/" + doacao, admin)
+				.andExpect(jsonPath("$.campanhaAtiva").value(true))
+				.andExpect(jsonPath("$.podeAlterar").value(true));
+	}
+
+	@Test
 	void autorEditaEExcluiAPropriaDoacao() throws Exception {
 		long minha = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
 

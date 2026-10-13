@@ -8,5 +8,5 @@ import java.util.List;
 public record DoacaoResponse(Long id, Long campanhaId, String campanhaTitulo, Long doadorId, String doadorNome,
 		TipoDoacao tipo, BigDecimal valor, FormaPagamento formaPagamento, LocalDate dataDoacao, String observacao,
 		Long registradoPorId, String registradoPorNome, OffsetDateTime criadoEm, List<ItemDoacaoResponse> itens,
-		boolean podeAlterar) {
+		boolean campanhaAtiva, boolean podeAlterar) {
 }
