@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -55,5 +56,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NaoEncontradoException.class)
 	public ResponseEntity<ProblemDetail> naoEncontrado(NaoEncontradoException ex) {
 		return problema(HttpStatus.NOT_FOUND, ex.getMessage());
+	}
+
+	/** Duas gravações da mesma versão ao mesmo tempo: a segunda perde (@Version). */
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	public ResponseEntity<ProblemDetail> conflitoDeVersao(ObjectOptimisticLockingFailureException ex) {
+		return problema(HttpStatus.CONFLICT,
+				"Este registro foi alterado por outra pessoa. Recarregue a página e tente de novo.");
 	}
 }

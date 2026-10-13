@@ -81,6 +81,11 @@ class DoacaoApiTest extends ApiTestSupport {
 		return enviar(post("/api/doacoes"), sessao, json);
 	}
 
+	/** Acrescenta a versão que o formulário de edição envia junto (travamento otimista). */
+	protected String comVersao(String json, long versao) {
+		return "{\"versao\":" + versao + "," + json.substring(1);
+	}
+
 	@Test
 	void voluntarioRegistraDoacaoAnonimaDeItens() throws Exception {
 		registrar(voluntario, "{\"campanhaId\":" + campanhaId + ",\"tipo\":\"ITEM\",\"dataDoacao\":\"" + hoje
@@ -170,7 +175,7 @@ class DoacaoApiTest extends ApiTestSupport {
 	void voluntarioRecebe403AoEditarDoacaoDeOutro() throws Exception {
 		long daAna = id(registrar(admin, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
 
-		enviar(put("/api/doacoes/" + daAna), voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "9"))
+		enviar(put("/api/doacoes/" + daAna), voluntario, comVersao(doacaoDeItens(campanhaId, hoje, arrozId, "9"), 0))
 				.andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.detail").value("Você só pode alterar doações que você registrou."));
 		enviar(delete("/api/doacoes/" + daAna), voluntario, null).andExpect(status().isForbidden());
@@ -178,10 +183,48 @@ class DoacaoApiTest extends ApiTestSupport {
 	}
 
 	@Test
+	void doacaoDeCampanhaEncerradaNaoPodeSerAlterada() throws Exception {
+		long doacao = id(registrar(admin, doacaoDeItens(campanhaId, hoje, arrozId, "2")));
+		mudarStatus(campanhaId, "ENCERRADA");
+		consultar("/api/doacoes/" + doacao, admin)
+				.andExpect(jsonPath("$.campanhaAtiva").value(false))
+				.andExpect(jsonPath("$.podeAlterar").value(false));
+		mudarStatus(campanhaId, "ATIVA");
+		consultar("/api/doacoes/" + doacao, admin)
+				.andExpect(jsonPath("$.campanhaAtiva").value(true))
+				.andExpect(jsonPath("$.podeAlterar").value(true));
+	}
+
+	@Test
+	void edicaoComVersaoDesatualizadaRetorna409() throws Exception {
+		long doacao = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
+
+		enviar(put("/api/doacoes/" + doacao), voluntario, comVersao(doacaoDeItens(campanhaId, hoje, arrozId, "2"), 0))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.versao").value(1));
+		enviar(put("/api/doacoes/" + doacao), admin, comVersao(doacaoDeItens(campanhaId, hoje, arrozId, "3"), 0))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail")
+						.value("Esta doação foi alterada por outra pessoa. Recarregue a página e tente de novo."));
+		consultar("/api/doacoes/" + doacao, voluntario)
+				.andExpect(jsonPath("$.itens[0].quantidade").value(2))
+				.andExpect(jsonPath("$.versao").value(1));
+	}
+
+	@Test
+	void edicaoSemVersaoRetorna400() throws Exception {
+		long doacao = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
+		enviar(put("/api/doacoes/" + doacao), voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "2"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.erros[0].campo").value("versao"))
+				.andExpect(jsonPath("$.erros[0].mensagem").value("Recarregue a página e tente de novo."));
+	}
+
+	@Test
 	void autorEditaEExcluiAPropriaDoacao() throws Exception {
 		long minha = id(registrar(voluntario, doacaoDeItens(campanhaId, hoje, arrozId, "1")));
 
-		enviar(put("/api/doacoes/" + minha), voluntario, doacaoDeItens(campanhaId, hoje, feijaoId, "4"))
+		enviar(put("/api/doacoes/" + minha), voluntario, comVersao(doacaoDeItens(campanhaId, hoje, feijaoId, "4"), 0))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.itens[0].item").value("Feijão"))
 				.andExpect(jsonPath("$.registradoPorNome").value("Vitor"));

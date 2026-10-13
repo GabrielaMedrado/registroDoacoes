@@ -13,9 +13,13 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   homologacao:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: homologacao
     steps:
       - name: Validação da versão
@@ -44,6 +48,7 @@ jobs:
   producao:
     needs: homologacao
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Aprovação obrigatória configurada no Environment (Settings → Environments → production).
     environment: production
     steps:

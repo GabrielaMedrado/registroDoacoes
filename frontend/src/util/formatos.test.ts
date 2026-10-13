@@ -58,7 +58,9 @@ const ITENS: Doacao = {
     { necessidadeId: 10, item: 'Arroz', unidade: 'KG', quantidade: 5 },
     { necessidadeId: 11, item: 'Feijão', unidade: 'KG', quantidade: 2.5 },
   ],
+  campanhaAtiva: true,
   podeAlterar: true,
+  versao: 0,
 }
 
 test('resumoDoacao de itens', () => {
