@@ -27,7 +27,7 @@ cp .env.example .env
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Conexão com o PostgreSQL. `DB_USER` e `DB_PASSWORD` são obrigatórias: sem elas o Compose para com `defina DB_PASSWORD no .env` |
 | `ADMIN_EMAIL`, `ADMIN_SENHA` | Primeiro usuário ADMIN, criado automaticamente quando o banco não tem usuários (senha com ao menos 8 caracteres) |
 | `APP_VERSAO` | Versão da imagem que o Compose usa (padrão `latest`). No servidor quem define é o deploy |
-| `BACKUP_DIR`, `BACKUP_MANTER` | Pasta dos backups (padrão `backups`) e quantos manter (padrão 30) |
+| `BACKUP_DIR`, `BACKUP_MANTER` | Pasta dos backups (padrão `backups`) e quantos manter (padrão 30; inteiro maior que zero) |
 
 O `.env` não é versionado.
 

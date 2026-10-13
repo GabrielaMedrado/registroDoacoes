@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class DoacaoService {
 
 	static final String MSG_CAMPANHA_NAO_ATIVA = "Só é possível registrar ou alterar doações em campanhas ativas.";
+	static final String MSG_DOACAO_ALTERADA =
+			"Esta doação foi alterada por outra pessoa. Recarregue a página e tente de novo.";
 	private static final String CAMPO_ITENS = "itens";
 
 	private final DoacaoRepository doacoes;
@@ -78,11 +80,19 @@ public class DoacaoService {
 	@Transactional
 	public DoacaoResponse atualizar(Long id, DoacaoRequest req, UsuarioAutenticado usuario) {
 		Doacao doacao = obterParaAlterar(id, usuario);
+		if (req.versao() == null) {
+			throw new CampoInvalidoException("versao", "Recarregue a página e tente de novo.");
+		}
+		if (!req.versao().equals(doacao.getVersao())) {
+			throw new RegraNegocioException(MSG_DOACAO_ALTERADA);
+		}
 		List<ItemDoacao> itens = validar(req);
 		doacao.atualizar(req.campanhaId(), req.doadorId(), req.tipo(), valorDe(req), formaDe(req), req.dataDoacao(),
 				req.observacao());
 		doacao.substituirItens(itens);
-		return montador.montar(doacoes.save(doacao), usuario);
+		// Flush aqui: a corrida entre a conferência acima e a gravação vira 409 nesta requisição (@Version),
+		// e a resposta já leva a versão nova.
+		return montador.montar(doacoes.saveAndFlush(doacao), usuario);
 	}
 
 	@Transactional

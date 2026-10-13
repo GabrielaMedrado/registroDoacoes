@@ -5,6 +5,7 @@ import br.org.iap.doacoes.campanha.Campanha;
 import br.org.iap.doacoes.campanha.CampanhaRepository;
 import br.org.iap.doacoes.campanha.Necessidade;
 import br.org.iap.doacoes.campanha.NecessidadeRepository;
+import br.org.iap.doacoes.campanha.StatusCampanha;
 import br.org.iap.doacoes.doador.Doador;
 import br.org.iap.doacoes.doador.DoadorRepository;
 import br.org.iap.doacoes.usuario.Papel;
@@ -45,8 +46,8 @@ public class DoacaoMontador {
 	}
 
 	public List<DoacaoResponse> montar(List<Doacao> lista, UsuarioAutenticado usuario) {
-		Map<Long, String> titulos = porId(campanhas.findAllById(ids(lista, Doacao::getCampanhaId)),
-				Campanha::getId, Campanha::getTitulo);
+		Map<Long, Campanha> campanhasPorId = porId(campanhas.findAllById(ids(lista, Doacao::getCampanhaId)),
+				Campanha::getId, Function.identity());
 		Map<Long, String> nomesDoadores = porId(doadores.findAllById(ids(lista, Doacao::getDoadorId)),
 				Doador::getId, Doador::getNome);
 		Map<Long, String> nomesUsuarios = porId(usuarios.findAllById(ids(lista, Doacao::getRegistradoPorId)),
@@ -57,24 +58,28 @@ public class DoacaoMontador {
 		Map<Long, Necessidade> itens = necessidades.findAllById(idsNecessidades).stream()
 				.collect(Collectors.toMap(Necessidade::getId, Function.identity()));
 
-		return lista.stream().map(d -> new DoacaoResponse(d.getId(), d.getCampanhaId(),
-				titulos.get(d.getCampanhaId()), d.getDoadorId(), nomesDoadores.get(d.getDoadorId()), d.getTipo(),
-				d.getValor(), d.getFormaPagamento(), d.getDataDoacao(), d.getObservacao(), d.getRegistradoPorId(),
-				nomesUsuarios.get(d.getRegistradoPorId()), d.getCriadoEm(),
-				d.getItens().stream().map(i -> {
-					Necessidade n = itens.get(i.getNecessidadeId());
-					return new ItemDoacaoResponse(i.getNecessidadeId(), n == null ? null : n.getItem(),
-							n == null ? null : n.getUnidade(), i.getQuantidade());
-				}).toList(),
-				podeAlterar(d, usuario))).toList();
+		return lista.stream().map(d -> {
+			Campanha campanha = campanhasPorId.get(d.getCampanhaId());
+			boolean campanhaAtiva = campanha != null && campanha.getStatus() == StatusCampanha.ATIVA;
+			return new DoacaoResponse(d.getId(), d.getCampanhaId(), campanha == null ? null : campanha.getTitulo(),
+					d.getDoadorId(), nomesDoadores.get(d.getDoadorId()), d.getTipo(), d.getValor(),
+					d.getFormaPagamento(), d.getDataDoacao(), d.getObservacao(), d.getRegistradoPorId(),
+					nomesUsuarios.get(d.getRegistradoPorId()), d.getCriadoEm(),
+					d.getItens().stream().map(i -> {
+						Necessidade n = itens.get(i.getNecessidadeId());
+						return new ItemDoacaoResponse(i.getNecessidadeId(), n == null ? null : n.getItem(),
+								n == null ? null : n.getUnidade(), i.getQuantidade());
+					}).toList(),
+					// Campanha não ativa: o service recusa a alteração (409), então a tela nem oferece.
+					campanhaAtiva, campanhaAtiva && podeAlterar(d, usuario), d.getVersao());
+		}).toList();
 	}
 
 	private static List<Long> ids(List<Doacao> lista, Function<Doacao, Long> campo) {
 		return lista.stream().map(campo).filter(Objects::nonNull).distinct().toList();
 	}
 
-	private static <T> Map<Long, String> porId(Collection<T> entidades, Function<T, Long> id,
-			Function<T, String> nome) {
-		return entidades.stream().collect(Collectors.toMap(id, nome));
+	private static <T, V> Map<Long, V> porId(Collection<T> entidades, Function<T, Long> id, Function<T, V> valor) {
+		return entidades.stream().collect(Collectors.toMap(id, valor));
 	}
 }

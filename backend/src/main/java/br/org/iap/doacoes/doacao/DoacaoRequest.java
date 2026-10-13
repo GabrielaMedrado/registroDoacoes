@@ -18,7 +18,9 @@ public record DoacaoRequest(
 		FormaPagamento formaPagamento,
 		@NotNull(message = "Informe a data da doação.") LocalDate dataDoacao,
 		@Size(max = 1000, message = "Use até 1000 caracteres.") String observacao,
-		@Valid List<ItemDoacaoRequest> itens) {
+		@Valid List<ItemDoacaoRequest> itens,
+		// Só na edição: a versão lida pelo formulário (ver DoacaoService.atualizar).
+		Long versao) {
 
 	public DoacaoRequest {
 		itens = itens == null ? List.of() : itens;
