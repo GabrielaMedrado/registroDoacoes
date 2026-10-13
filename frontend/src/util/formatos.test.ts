@@ -60,6 +60,7 @@ const ITENS: Doacao = {
   ],
   campanhaAtiva: true,
   podeAlterar: true,
+  versao: 0,
 }
 
 test('resumoDoacao de itens', () => {

@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.org.iap.doacoes.auth.UsuarioAutenticado;
@@ -86,10 +88,11 @@ class DoacaoServiceTest {
 			return todas.stream().filter(n -> ids.contains(n.getId())).toList();
 		});
 		when(doacoes.save(any(Doacao.class))).thenAnswer(inv -> comId(inv.getArgument(0), 100L));
+		when(doacoes.saveAndFlush(any(Doacao.class))).thenAnswer(inv -> inv.getArgument(0));
 	}
 
 	private static DoacaoRequest itens(Long campanhaId, LocalDate data, ItemDoacaoRequest... itens) {
-		return new DoacaoRequest(campanhaId, null, TipoDoacao.ITEM, null, null, data, null, List.of(itens));
+		return new DoacaoRequest(campanhaId, null, TipoDoacao.ITEM, null, null, data, null, List.of(itens), 0L);
 	}
 
 	private static ItemDoacaoRequest item(Long necessidadeId, String quantidade) {
@@ -117,7 +120,7 @@ class DoacaoServiceTest {
 	@Test
 	void registraDoacaoEmDinheiroSemItens() {
 		service.registrar(new DoacaoRequest(1L, null, TipoDoacao.DINHEIRO, new BigDecimal("50"),
-				FormaPagamento.PIX, HOJE, null, List.of(item(10L, "5"))), vitor);
+				FormaPagamento.PIX, HOJE, null, List.of(item(10L, "5")), null), vitor);
 
 		Doacao d = salva();
 		assertThat(d.getValor()).isEqualByComparingTo("50");
@@ -173,7 +176,7 @@ class DoacaoServiceTest {
 	@Test
 	void dinheiroSemValorFalhaNoCampoValor() {
 		assertThatThrownBy(() -> service.registrar(new DoacaoRequest(1L, null, TipoDoacao.DINHEIRO, null,
-				FormaPagamento.PIX, HOJE, null, null), vitor))
+				FormaPagamento.PIX, HOJE, null, null, null), vitor))
 				.isInstanceOf(CampoInvalidoException.class)
 				.hasMessage("Informe o valor.")
 				.extracting("campo").isEqualTo("valor");
@@ -182,7 +185,7 @@ class DoacaoServiceTest {
 	@Test
 	void dinheiroSemFormaFalhaNoCampoFormaPagamento() {
 		assertThatThrownBy(() -> service.registrar(new DoacaoRequest(1L, null, TipoDoacao.DINHEIRO,
-				new BigDecimal("10"), null, HOJE, null, null), vitor))
+				new BigDecimal("10"), null, HOJE, null, null, null), vitor))
 				.isInstanceOf(CampoInvalidoException.class)
 				.hasMessage("Escolha a forma de pagamento.")
 				.extracting("campo").isEqualTo("formaPagamento");
@@ -193,7 +196,7 @@ class DoacaoServiceTest {
 		when(doadores.existsById(55L)).thenReturn(false);
 
 		assertThatThrownBy(() -> service.registrar(new DoacaoRequest(1L, 55L, TipoDoacao.ITEM, null, null, HOJE,
-				null, List.of(item(10L, "1"))), vitor))
+				null, List.of(item(10L, "1")), null), vitor))
 				.isInstanceOf(CampoInvalidoException.class)
 				.hasMessage("Doador não encontrado.")
 				.extracting("campo").isEqualTo("doadorId");
@@ -201,6 +204,7 @@ class DoacaoServiceTest {
 
 	private Doacao doacaoDeItensDe(Long autor) {
 		Doacao d = comId(new Doacao(1L, null, TipoDoacao.ITEM, null, null, HOJE, null, autor), 100L);
+		ReflectionTestUtils.setField(d, "versao", 0L);
 		d.substituirItens(List.of(new ItemDoacao(10L, new BigDecimal("5"))));
 		when(doacoes.findById(100L)).thenReturn(Optional.of(d));
 		return d;
@@ -222,6 +226,18 @@ class DoacaoServiceTest {
 
 		assertThatCode(() -> service.atualizar(100L, itens(1L, HOJE, item(11L, "1")),
 				usuario(1L, "Ana", Papel.ADMIN))).doesNotThrowAnyException();
+	}
+
+	@Test
+	void atualizarComVersaoDiferenteLancaConflito() {
+		Doacao d = doacaoDeItensDe(7L);
+		ReflectionTestUtils.setField(d, "versao", 2L);
+
+		assertThatThrownBy(() -> service.atualizar(100L, itens(1L, HOJE, item(11L, "1")), vitor))
+				.isInstanceOf(RegraNegocioException.class)
+				.hasMessage("Esta doação foi alterada por outra pessoa. Recarregue a página e tente de novo.");
+		verify(doacoes, never()).save(any(Doacao.class));
+		verify(doacoes, never()).saveAndFlush(any(Doacao.class));
 	}
 
 	@Test
@@ -250,7 +266,7 @@ class DoacaoServiceTest {
 		Doacao d = doacaoDeItensDe(7L);
 
 		service.atualizar(100L, new DoacaoRequest(1L, null, TipoDoacao.DINHEIRO, new BigDecimal("20"),
-				FormaPagamento.ESPECIE, HOJE, null, null), vitor);
+				FormaPagamento.ESPECIE, HOJE, null, null, 0L), vitor);
 
 		assertThat(d.getItens()).isEmpty();
 		assertThat(d.getValor()).isEqualByComparingTo("20");

@@ -71,7 +71,7 @@ public class DoacaoMontador {
 								n == null ? null : n.getUnidade(), i.getQuantidade());
 					}).toList(),
 					// Campanha não ativa: o service recusa a alteração (409), então a tela nem oferece.
-					campanhaAtiva, campanhaAtiva && podeAlterar(d, usuario));
+					campanhaAtiva, campanhaAtiva && podeAlterar(d, usuario), d.getVersao());
 		}).toList();
 	}
 

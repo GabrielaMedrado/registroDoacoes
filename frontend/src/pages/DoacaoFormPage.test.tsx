@@ -54,6 +54,7 @@ const DOACAO: Doacao = {
   itens: [{ necessidadeId: 10, item: 'Arroz', unidade: 'KG', quantidade: 5 }],
   campanhaAtiva: true,
   podeAlterar: true,
+  versao: 0,
 }
 
 const campanhas = vi.mocked(campanhasApi)
@@ -243,6 +244,7 @@ test('editar carrega a doação e salva com atualizarDoacao', async () => {
       dataDoacao: '2026-10-10',
       observacao: null,
       itens: [{ necessidadeId: 10, quantidade: 7 }],
+      versao: 0,
     }),
   )
 })
@@ -254,6 +256,16 @@ test('doação de campanha não ativa mostra aviso em vez do formulário', async
   expect(await screen.findByText('Só é possível alterar doações de campanhas ativas.')).toBeInTheDocument()
   expect(screen.queryByText('Você só pode alterar doações que você registrou.')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Salvar alterações' })).not.toBeInTheDocument()
+})
+
+test('editar envia a versão carregada', async () => {
+  doacoes.buscarDoacao.mockResolvedValue({ ...DOACAO, versao: 4 })
+  await abrir('/doacoes/50/editar')
+
+  await screen.findByLabelText('Quantidade 1')
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+  await waitFor(() => expect(doacoes.atualizarDoacao).toHaveBeenCalledWith(50, expect.objectContaining({ versao: 4 })))
 })
 
 test('cadastrar novo doador no seletor já o seleciona', async () => {

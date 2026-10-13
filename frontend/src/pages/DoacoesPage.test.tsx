@@ -31,6 +31,7 @@ const DOACAO: Doacao = {
   itens: [{ necessidadeId: 10, item: 'Arroz', unidade: 'KG', quantidade: 5 }],
   campanhaAtiva: true,
   podeAlterar: true,
+  versao: 0,
 }
 
 const campanhas = vi.mocked(campanhasApi)
