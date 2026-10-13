@@ -1,0 +1,96 @@
+export type ErroCampo = { campo: string; mensagem: string }
+
+export type ProblemDetail = {
+  status: number
+  title?: string
+  detail?: string
+  erros?: ErroCampo[]
+}
+
+type Metodo = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
+const MENSAGEM_PADRAO = 'Erro inesperado. Tente novamente.'
+
+export class ApiError extends Error {
+  status: number
+  problem?: ProblemDetail
+
+  constructor(status: number, problem?: ProblemDetail) {
+    super(problem?.detail ?? MENSAGEM_PADRAO)
+    this.name = 'ApiError'
+    this.status = status
+    this.problem = problem
+  }
+}
+
+/** Endpoints em que 401 é resposta esperada (não significa sessão expirada). */
+const ROTAS_SEM_SESSAO = ['/api/auth/login', '/api/auth/me', '/api/auth/logout']
+
+let aoNaoAutenticado: () => void = () => {}
+
+/** Registra o que fazer quando a sessão expira (401 em rotas que não são de autenticação). */
+export function definirAoNaoAutenticado(fn: () => void): void {
+  aoNaoAutenticado = fn
+}
+
+function lerCookie(nome: string): string | undefined {
+  const par = document.cookie.split('; ').find((c) => c.startsWith(`${nome}=`))
+  return par ? decodeURIComponent(par.substring(nome.length + 1)) : undefined
+}
+
+async function lerProblema(resposta: Response): Promise<ProblemDetail | undefined> {
+  try {
+    const texto = await resposta.text()
+    return texto ? (JSON.parse(texto) as ProblemDetail) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Faz a requisição com sessão e CSRF; lança ApiError (e avisa sessão expirada) se a resposta não for ok. */
+async function requisitar(
+  caminho: string,
+  accept: string,
+  opcoes?: { method?: Metodo; body?: unknown },
+): Promise<Response> {
+  const method = opcoes?.method ?? 'GET'
+  const headers: Record<string, string> = { Accept: accept }
+  if (opcoes?.body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
+  if (method !== 'GET') {
+    const token = lerCookie('XSRF-TOKEN')
+    if (token) {
+      headers['X-XSRF-TOKEN'] = token
+    }
+  }
+
+  const resposta = await fetch(caminho, {
+    method,
+    headers,
+    credentials: 'same-origin',
+    body: opcoes?.body === undefined ? undefined : JSON.stringify(opcoes.body),
+  })
+
+  if (!resposta.ok) {
+    if (resposta.status === 401 && !ROTAS_SEM_SESSAO.includes(caminho)) {
+      aoNaoAutenticado()
+    }
+    throw new ApiError(resposta.status, await lerProblema(resposta))
+  }
+  return resposta
+}
+
+export async function api<T>(caminho: string, opcoes?: { method?: Metodo; body?: unknown }): Promise<T> {
+  const resposta = await requisitar(caminho, 'application/json', opcoes)
+  if (resposta.status === 204) {
+    return undefined as T
+  }
+  const texto = await resposta.text()
+  return (texto ? JSON.parse(texto) : undefined) as T
+}
+
+/** GET de conteúdo em texto puro (ex.: texto de pendências para WhatsApp). */
+export async function apiTexto(caminho: string): Promise<string> {
+  return (await requisitar(caminho, 'text/plain')).text()
+}

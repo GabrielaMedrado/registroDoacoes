@@ -1,0 +1,11 @@
+server:
+  # HTTPS termina no proxy do servidor; o Tomcat só aceita X-Forwarded-* vindo de rede interna.
+  forward-headers-strategy: native
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+springdoc:
+  api-docs:
+    enabled: false
