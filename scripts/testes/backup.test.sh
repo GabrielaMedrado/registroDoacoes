@@ -43,5 +43,24 @@ mantem_so_os_mais_recentes() {
 	afirmar_nao_contem "$arquivos" "doacoes-20260102-000000.dump"
 }
 
+manter_invalido_e_recusado_sem_apagar_nada() {
+	mkdir -p "$PROJ/backups"
+	echo velho > "$PROJ/backups/doacoes-20260101-000000.dump"
+	local valor saida status
+	for valor in 0 -1 abc 1.5 ' 3'; do
+		status=0
+		saida=$(BACKUP_MANTER="$valor" DOCKER_SAIDA="novo" "$PROJ/scripts/backup.sh" 2>&1) || status=$?
+		afirmar_igual 2 "$status"
+		afirmar_contem "$saida" "BACKUP_MANTER inválido: $valor. Use um número inteiro maior que zero."
+	done
+	afirmar_igual "doacoes-20260101-000000.dump" "$(ls "$PROJ/backups")"
+	afirmar_igual "" "$(cat "$LOG_DOCKER")"
+}
+
+manter_vazio_usa_o_padrao() {
+	BACKUP_MANTER="" DOCKER_SAIDA="novo" "$PROJ/scripts/backup.sh" > /dev/null
+	afirmar_igual 1 "$(find "$PROJ/backups" -name 'doacoes-*.dump' | wc -l | tr -d ' ')"
+}
+
 rodar_testes grava_dump_com_data_no_nome falha_do_pg_dump_nao_deixa_arquivo dump_vazio_e_falha \
-	mantem_so_os_mais_recentes
+	mantem_so_os_mais_recentes manter_invalido_e_recusado_sem_apagar_nada manter_vazio_usa_o_padrao
