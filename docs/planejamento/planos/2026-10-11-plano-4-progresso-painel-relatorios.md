@@ -1,14 +1,12 @@
 # Plano 4 — Progresso, Painel, Relatórios, OpenAPI e Postman — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Qualquer usuário vê, por campanha, meta × arrecadado × pendente e o total em R$ (detalhe e painel); relatórios em tela, CSV e impressão; texto de pendências para WhatsApp; API documentada pelo OpenAPI e coleção Postman versionada.
 
 **Architecture:** Novo pacote `progresso/` concentra o cálculo (spec §7): consultas agregadas com `JdbcClient` (nada de totais armazenados — R6) e uma classe pura de cálculo (R5, percentual). Painel, detalhe da campanha e relatórios reutilizam o mesmo `ProgressoService`. Novo pacote `relatorio/` monta JSON, CSV (`comum/CsvWriter`) e texto puro. No frontend, componentes `BarraProgresso` e `TabelaProgresso` servem ao detalhe, ao painel e aos relatórios.
 
 **Tech Stack:** igual aos Planos 1–3, mais `springdoc-openapi-starter-webmvc-ui` (linha 3.x compatível com Spring Boot 4.1 — confirmar a versão mais recente no Maven Central e na tabela de compatibilidade do springdoc) e `newman` via `npx` só para verificar a coleção.
 
-**Spec:** `docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md` (R5, R6; §4 itens 2, 3 e 6 e "percentual de progresso geral"; §5 progresso, painel, relatórios, documentação, Postman; §6 perfis; §8 testes)
+**Spec:** `docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md` (R5, R6; §4 itens 2, 3 e 6 e "percentual de progresso geral"; §5 progresso, painel, relatórios, documentação, Postman; §6 perfis; §8 testes)
 
 **Base:** branch `feature/plano-4` criada a partir de `feature/plano-3`.
 

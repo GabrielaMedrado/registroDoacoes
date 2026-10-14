@@ -4,8 +4,8 @@ Sistema web para gestão de campanhas sociais, necessidades e doações da Igrej
 
 Projeto Integrador de Tecnologia da Informação III — UFMS Digital (2026.2).
 
-- Especificação: [docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md](docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md)
-- Planos de implementação: [docs/superpowers/plans/](docs/superpowers/plans/)
+- Especificação: [docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md](docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md)
+- Planos de implementação: [docs/planejamento/planos/](docs/planejamento/planos/)
 - Banco de dados: [diagrama entidade-relacionamento](docs/banco/diagrama-er.png) e [exemplos de INSERT, SELECT, UPDATE e DELETE](docs/banco/exemplos-dml.sql) (o esquema está nas migrations em `backend/src/main/resources/db/migration/`)
 - Documentação da API: anexada a cada [Release](https://github.com/GabrielaMedrado/registroDoacoes/releases) (`openapi.json` e `javadoc-vX.Y.Z.zip`); localmente, no perfil `dev`, em http://localhost:8080/swagger-ui
 
