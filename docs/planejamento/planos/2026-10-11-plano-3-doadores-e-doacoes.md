@@ -1,14 +1,12 @@
 # Plano 3 — Doadores e Doações — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Voluntários cadastram doadores e registram doações (itens ou dinheiro, anônimas ou não) com as regras R1–R4, R8 e R9 garantidas no servidor; todos consultam e filtram doações; ADMIN anonimiza doadores.
 
 **Architecture:** Novos pacotes `doador/` e `doacao/` no backend no padrão dos Planos 1–2 (controller fino → service com regras → JPA; DTOs `record`; erros via `GlobalExceptionHandler`). `Doacao` é dona dos seus `ItemDoacao` (cascade + orphanRemoval). Filtros da listagem com JPA `Specification`. No frontend, um formulário único de doação serve para registrar e editar, com seletor de doador que permite cadastrar na hora.
 
 **Tech Stack:** igual aos Planos 1–2.
 
-**Spec:** `docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md` (§3 `doador`, `doacao`, `item_doacao`, R1–R4, R8, R9; §4 itens 4 e 5; §5 endpoints de doações e doadores; §6 tabela de autorização)
+**Spec:** `docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md` (§3 `doador`, `doacao`, `item_doacao`, R1–R4, R8, R9; §4 itens 4 e 5; §5 endpoints de doações e doadores; §6 tabela de autorização)
 
 **Base:** branch `feature/plano-3` criada a partir de `feature/plano-2`.
 

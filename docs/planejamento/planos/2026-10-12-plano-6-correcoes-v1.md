@@ -1,14 +1,12 @@
 # Plano 6: Correções antes da v1.0 — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Fechar quatro falhas que afetam o uso real antes da tag `v1.0.0`: backup que apaga tudo, workflows sem permissões mínimas e sem timeout, "Editar" oferecido em doação que não pode mais ser alterada e edição simultânea de doação que sobrescreve em silêncio.
 
 **Architecture:** Cada correção fica na camada que tem a regra: validação no próprio `scripts/backup.sh`; `permissions`/`timeout-minutes` nos YAML, com um teste de shell que lê os arquivos; `podeAlterar` da resposta passa a incluir "campanha ativa" (o service já recusa com 409); travamento otimista com coluna `versao` + `@Version`, conferida contra a versão enviada pelo formulário.
 
 **Tech Stack:** Bash + mini-framework de `scripts/testes/lib.sh`; GitHub Actions + actionlint; Spring Boot 4.1 / JPA / Flyway / MockMvc; React 19 + Vitest.
 
-**Spec:** `docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md`
+**Spec:** `docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md`
 
 **Branch:** `feature/plano-6`, criada a partir da `main` (já com o PR #1 mergeado).
 
@@ -20,7 +18,7 @@
 - Textos visíveis em português, mesmo tom das mensagens existentes (ex.: `"Só é possível registrar ou alterar doações em campanhas ativas."`).
 - Checkstyle e JaCoCo ≥ 70% nos `*Service` continuam passando (`./mvnw -B verify`).
 - Scripts passam no ShellCheck (`koalaman/shellcheck:v0.10.0`) e workflows no actionlint (`rhysd/actionlint:1.7.7`). No Git Bash: `MSYS_NO_PATHCONV=1` ou `-v "$(pwd -W):/repo"` com `MSYS2_ARG_CONV_EXCL='/repo'`.
-- Um commit local por tarefa, terminando com a linha `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Um commit local por tarefa.
 
 ## Review Focus
 

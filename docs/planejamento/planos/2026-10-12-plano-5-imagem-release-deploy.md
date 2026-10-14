@@ -1,14 +1,12 @@
 # Plano 5 — Imagem Docker, Release, Deploy, Backup e README — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Uma imagem Docker única (React embutido no JAR, usuário não-root) publicada no GHCR a cada tag `v*`, com GitHub Release, changelog e documentação da API no GitHub Pages; deploy manual em homologação e produção (com aprovação e backup antes); README para quem vai manter.
 
 **Architecture:** O Spring serve o build do Vite a partir de `classpath:/static/`, com um resolvedor que devolve `index.html` para rotas do React (spec §3 "Monólito com SPA embutida"). O `Dockerfile` tem 3 estágios (node → maven → JRE). Os workflows ficam finos: a lógica de servidor mora em scripts de shell testáveis (`backup.sh`, `implantar.sh`, `verificar-implantacao.sh`, `changelog.sh`), executados no servidor via SSH ou no runner. O `ci.yml` vira reutilizável e a release o chama em vez de repetir passos.
 
 **Tech Stack:** igual aos Planos 1–4, mais Docker BuildKit, GitHub Actions (`docker/*`, `actions/upload-pages-artifact`, `actions/deploy-pages`), `gh` CLI (já no runner), Swagger UI via CDN na página do Pages, ShellCheck e actionlint rodando por imagem Docker (sem instalar nada na máquina).
 
-**Spec:** `docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md` (§1 item 4; §2 hospedagem; §3 monólito com SPA; §5 documentação; §6 segredos, perfis, HTTPS; §7 estrutura; §9 CI/CD; §10 linha 22/10)
+**Spec:** `docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md` (§1 item 4; §2 hospedagem; §3 monólito com SPA; §5 documentação; §6 segredos, perfis, HTTPS; §7 estrutura; §9 CI/CD; §10 linha 22/10)
 
 **Base:** branch `feature/plano-5` criada a partir de `feature/plano-3` (que já contém o Plano 4).
 
@@ -83,7 +81,7 @@ Expected: PASS 8/8.
 
 - [ ] **Step 5: Suíte completa**
 
-Run: `cd backend && ./mvnw -B verify > ../.superpowers/verify.log 2>&1; tail -30 ../.superpowers/verify.log`
+Run: `cd backend && ./mvnw -B verify > /tmp/verify.log 2>&1; tail -30 /tmp/verify.log`
 Expected: `BUILD SUCCESS`, 186 testes. Os do Swagger (`OpenApiTest`, `OpenApiProdTest`) continuam verdes: `/swagger-ui/index.html` fora do dev segue 404, porque `swagger-ui` é prefixo reservado.
 
 - [ ] **Step 6: Commit**
@@ -125,7 +123,7 @@ Expected: `A aplicação não ficou saudável em 5s.` e `saida=1`.
     2. `eclipse-temurin:25-jdk AS backend`: copia `backend/`, `config/` (o Checkstyle lê `../config`) e o `dist` do estágio 1 para `src/main/resources/static/`. Roda `./mvnw -B package -DskipTests -Drevision=${VERSAO}` com cache montado em `/root/.m2`. Os testes rodam no CI, que tem o Testcontainers; o build da imagem não tem Docker.
     3. `eclipse-temurin:25-jre-alpine`: usuário `app` (uid 10001) sem shell, `COPY --from=backend` do JAR como `/app/app.jar`, `USER app`, `EXPOSE 8080`, `ENV SPRING_PROFILES_ACTIVE=prod JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"`, `HEALTHCHECK` com `wget -qO- http://127.0.0.1:8080/actuator/health | grep -q UP`, `ENTRYPOINT ["java","-jar","/app/app.jar"]`.
     4. `ARG VERSAO=0.0.0-dev`.
-  - `.dockerignore`: `**/node_modules`, `frontend/dist`, `backend/target`, `.env`, `.git`, `backups`, `.superpowers`, `.claude`, `postman`, `docs`, `*.pdf`.
+  - `.dockerignore`: `**/node_modules`, `frontend/dist`, `backend/target`, `.env`, `.git`, `backups`, `postman`, `docs`, `*.pdf`.
   - `docker-compose.yml`:
     - Serviço `app`: `depends_on: db: condition: service_healthy`, `restart: unless-stopped`, `ports: ["127.0.0.1:8080:8080"]`.
     - Variáveis do `app`: `DB_URL: jdbc:postgresql://db:5432/doacoes`, `DB_USER: ${DB_USER:?defina DB_USER no .env}`, `DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}`, `ADMIN_EMAIL: ${ADMIN_EMAIL:-}`, `ADMIN_SENHA: ${ADMIN_SENHA:-}`.
@@ -153,7 +151,7 @@ Entre com o admin do `.env`. Navegue até o detalhe de uma campanha, aperte F5 e
 
 - [ ] **Step 7: Suíte backend** (o `pom.xml` mudou)
 
-Run: `cd backend && ./mvnw -B verify > ../.superpowers/verify.log 2>&1; tail -5 ../.superpowers/verify.log`
+Run: `cd backend && ./mvnw -B verify > /tmp/verify.log 2>&1; tail -5 /tmp/verify.log`
 Expected: `BUILD SUCCESS`.
 
 - [ ] **Step 8: Commit**

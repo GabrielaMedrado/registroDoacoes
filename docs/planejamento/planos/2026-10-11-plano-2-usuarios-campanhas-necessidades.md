@@ -1,14 +1,12 @@
 # Plano 2 — Usuários, Campanhas e Necessidades — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** ADMIN gerencia usuários, campanhas e necessidades; todos os usuários logados consultam campanhas e suas necessidades — API REST + telas React, com sessão revalidada a cada requisição.
 
 **Architecture:** Pacotes `usuario/` e `campanha/` no backend seguindo o padrão do Plano 1 (controller fino → service com regras → repositório JPA; DTOs `record`; erros via `GlobalExceptionHandler`). Autorização ADMIN com `@PreAuthorize`. No frontend, funções de API em `src/api/`, páginas com TanStack Query e formulários Mantine em modais.
 
 **Tech Stack:** igual ao Plano 1 (Java 25, Spring Boot 4.1.1, Spring Security 7.1, PostgreSQL 16, Testcontainers; React 19, TypeScript, Mantine 9, React Router 8, TanStack Query 5, Vitest 5).
 
-**Spec:** `docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md` (§3 tabelas e R7/R10, §4 itens 3 e 7, §5 endpoints, §6 autorização)
+**Spec:** `docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md` (§3 tabelas e R7/R10, §4 itens 3 e 7, §5 endpoints, §6 autorização)
 
 **Base:** branch `feature/plano-2` criada a partir de `feature/plano-1-fundacao` (o Plano 1 ainda não foi integrado à `main`).
 

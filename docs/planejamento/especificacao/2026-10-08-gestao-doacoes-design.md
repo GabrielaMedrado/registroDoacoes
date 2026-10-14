@@ -252,7 +252,7 @@ GET    /api/relatorios/pendencias            (text/plain)
 ├── scripts/backup.sh      pg_dump com data/hora no nome do arquivo
 ├── config/checkstyle.xml
 ├── postman/
-├── docs/superpowers/specs/
+├── docs/planejamento/especificacao/
 └── README.md              como rodar, variáveis de ambiente, backup/restauração
 ```
 
@@ -299,8 +299,6 @@ GET    /api/relatorios/pendencias            (text/plain)
 - Segredos: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KEY`.
 
 **Monitoramento** — indicadores do Plano (taxa de sucesso dos testes, falhas, tempo de pipeline, frequência de implantações) acompanhados pelos relatórios do GitHub Actions; health check em `/actuator/health`.
-
-**IA no processo** — apoio à revisão de PRs, geração/revisão de testes e documentação; não é etapa obrigatória do pipeline.
 
 ---
 

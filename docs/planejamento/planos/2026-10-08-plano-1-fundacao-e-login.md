@@ -1,14 +1,12 @@
 # Plano 1 — Fundação e Login Ponta a Ponta — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Monorepo funcionando localmente com banco versionado, CI verde nos dois jobs e login de ponta a ponta (API de autenticação com sessão + CSRF, tela de login React, rotas protegidas, layout com navegação, troca da própria senha, ADMIN inicial).
 
 **Architecture:** Spring Boot (API REST sob `/api`, sessão no servidor, CSRF em cookie) + PostgreSQL via Docker Compose; React + TypeScript (Vite) em `frontend/` com proxy de `/api` para `:8080`. O embutimento do React no JAR fica para o Plano 5.
 
 **Tech Stack:** Java 25, Spring Boot 4.1.1, Spring Security, Spring Data JPA, Flyway, PostgreSQL 16, Testcontainers, JUnit 5/Mockito/AssertJ, Checkstyle, JaCoCo; Vite, React, TypeScript, Mantine, React Router, TanStack Query, Vitest, React Testing Library; GitHub Actions.
 
-**Spec:** `docs/superpowers/specs/2026-10-08-gestao-doacoes-design.md` (seções 2, 3, 5, 6, 7, 8, 9)
+**Spec:** `docs/planejamento/especificacao/2026-10-08-gestao-doacoes-design.md` (seções 2, 3, 5, 6, 7, 8, 9)
 
 ## Roteiro dos planos
 
